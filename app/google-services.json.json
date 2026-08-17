@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "106555594589",
+    "project_id": "maarifaapp-aa585",
+    "storage_bucket": "maarifaapp-aa585.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:106555594589:android:e743e63b46ed3688ad3ab4",
+        "android_client_info": {
+          "package_name": "com.maarifa.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcNlowv61JgW0Bda9kkdFtLlWA8QZSIIw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

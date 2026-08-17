@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Maarifa 2026</string>
+
+    <!-- Google Sign-In: after you add google-services.json, open Firebase console
+         > Authentication > Sign-in method > Google > Web SDK configuration, copy the
+         "Web client ID" (NOT the Android client id) and paste it below. -->
+    <string name="google_web_client_id" translatable="false">REPLACE_WITH_YOUR_WEB_CLIENT_ID</string>
+</resources>

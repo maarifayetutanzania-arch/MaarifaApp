@@ -1,0 +1,93 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function myUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && myUserDoc().role == 'ADMIN';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // ---------------- users ----------------
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      // Profile can only be created once (registration) and only by the account owner;
+      // role/status changes after that go through the admin dashboard (Admin SDK), not rules.
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId)
+                    && request.resource.data.role == resource.data.role
+                    && request.resource.data.status == resource.data.status;
+      allow delete: if false;
+    }
+
+    // ---------------- teachers ----------------
+    // Verification status, engagement score and earnings balance are financial/trust
+    // fields — they are only ever written by Cloud Functions or the admin dashboard,
+    // both of which use the Admin SDK and therefore bypass these rules entirely.
+    match /teachers/{teacherId} {
+      allow read: if isOwner(teacherId) || isAdmin();
+      allow write: if false;
+    }
+
+    // ---------------- materials ----------------
+    match /materials/{materialId} {
+      allow read: if resource.data.status == 'APPROVED' || isAdmin() ||
+                     (isSignedIn() && resource.data.teacherId == request.auth.uid);
+      allow create: if isSignedIn()
+                    && request.resource.data.teacherId == request.auth.uid
+                    && request.resource.data.status == 'PENDING_REVIEW';
+      // Owning teacher may edit their own descriptive fields but can never approve
+      // themselves; status transitions are admin/Functions-only.
+      allow update: if isAdmin() ||
+                     (isSignedIn() && resource.data.teacherId == request.auth.uid
+                      && request.resource.data.status == resource.data.status);
+      allow delete: if isAdmin();
+    }
+
+    // ---------------- subscriptions ----------------
+    // Client NEVER writes subscription status/dates directly (PRD 8.5/12) — only reads.
+    // All writes happen server-side inside the initiatePayment / payment-webhook functions.
+    match /subscriptions/{subscriptionId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    // ---------------- downloads (bookkeeping only, not the files themselves) ----------------
+    match /downloads/{downloadId} {
+      allow read, write: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin();
+    }
+
+    // ---------------- engagement ----------------
+    match /engagement/{engagementId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow create, update: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ---------------- payouts ----------------
+    match /payouts/{payoutId} {
+      allow read: if isSignedIn() && (resource.data.teacherId == request.auth.uid || isAdmin());
+      allow write: if false; // scheduled Cloud Function only
+    }
+
+    // ---------------- notifications ----------------
+    match /notifications/{notificationId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow update: if isOwner(resource.data.userId)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create, delete: if false; // Cloud Functions only
+    }
+  }
+}

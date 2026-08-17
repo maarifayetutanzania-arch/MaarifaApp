@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Downloaded study materials live in app-private internal storage (filesDir/downloads).
+  We explicitly exclude that folder from cloud backup and device-to-device transfer so a
+  restored/cloned device never exposes another user's downloaded documents.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="downloads/" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="downloads/" />
+    </device-transfer>
+</data-extraction-rules>

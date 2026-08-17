@@ -1,0 +1,275 @@
+:root {
+  /* Refined "quiet premium" palette — matches app/.../ui/theme/Color.kt exactly */
+  --forest: #1f6b45;
+  --forest-deep: #0d3b28;
+  --forest-tint: #eef4ef;
+  --gold: #c99a3f;
+  --gold-tint: #f8f1e2;
+  --clay: #b6503f;
+  --clay-tint: #f7e5e1;
+  --paper: #f7f6f2;
+  --surface: #ffffff;
+  --ink: #1a2420;
+  --ink-soft: #767f78;
+  --line: #ebe9e2;
+
+  --font-display: "Manrope", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  --radius: 12px;
+  --shadow-sm: 0 1px 2px rgba(20, 30, 25, 0.04);
+  --shadow-md: 0 1px 2px rgba(20, 30, 25, 0.05), 0 10px 26px rgba(20, 30, 25, 0.07);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+a { color: inherit; }
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  border-radius: 9px;
+  font-weight: 600;
+  font-size: 0.87rem;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+button:focus-visible, a:focus-visible, input:focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #256b48, #123a27);
+  color: white;
+  padding: 9px 18px;
+  box-shadow: 0 4px 12px rgba(18, 58, 39, 0.28);
+}
+.btn-primary:hover { box-shadow: 0 6px 16px rgba(18, 58, 39, 0.34); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+.btn-danger {
+  background: var(--clay-tint);
+  color: var(--clay);
+  padding: 9px 16px;
+  border: 1px solid rgba(182, 80, 63, 0.18);
+}
+.btn-danger:hover { background: #f2d5cf; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+}
+.btn-ghost:hover { background: var(--surface); border-color: var(--forest); color: var(--forest); }
+
+input, textarea {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: #fafaf8;
+  color: var(--ink);
+  width: 100%;
+}
+input:focus, textarea:focus { background: var(--surface); }
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 236px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: linear-gradient(180deg, var(--forest-deep), #082116);
+  color: #dfe8e2;
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.02rem;
+  letter-spacing: -0.015em;
+  padding: 0 12px 24px;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  color: white;
+}
+.sidebar-wordmark span:last-child {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  padding-left: 9px;
+  border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  text-decoration: none;
+  color: #a7b3ac;
+  font-size: 0.87rem;
+  font-weight: 500;
+  margin-bottom: 1px;
+}
+.nav-link:hover { color: white; }
+.nav-link.active {
+  color: white;
+  font-weight: 600;
+  border-left: 3px solid var(--gold);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.nav-badge {
+  background: rgba(201, 154, 63, 0.18);
+  color: #e6c377;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 999px;
+}
+
+.main {
+  padding: 36px 44px;
+  max-width: 1100px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 26px;
+}
+.page-header p {
+  color: var(--ink-soft);
+  margin: 5px 0 0;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 30px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 18px;
+}
+
+.stat-card .value {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.stat-card .label {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+th {
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  background: var(--forest-tint);
+  padding: 11px 14px;
+  font-weight: 700;
+}
+td {
+  padding: 13px 14px;
+  border-top: 1px solid var(--line);
+  font-size: 0.88rem;
+  vertical-align: middle;
+}
+tr:hover td { background: #fafbf9; }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.pill-pending { background: var(--gold-tint); color: #8a6a2e; border: 1px solid rgba(201, 154, 63, 0.2); }
+.pill-approved { background: var(--forest-tint); color: var(--forest); border: 1px solid rgba(31, 107, 69, 0.15); }
+.pill-rejected { background: var(--clay-tint); color: var(--clay); border: 1px solid rgba(182, 80, 63, 0.18); }
+.pill-neutral { background: #f0f1ee; color: var(--ink-soft); border: 1px solid var(--line); }
+
+.row-actions { display: flex; gap: 8px; }
+
+.empty-state {
+  padding: 52px 20px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 30% 20%, var(--forest-deep), #08251a 75%);
+}
+.login-card {
+  background: var(--surface);
+  padding: 40px;
+  border-radius: 16px;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+}
+.error-text { color: var(--clay); font-size: 0.85rem; }
