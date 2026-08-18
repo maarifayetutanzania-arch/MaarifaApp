@@ -1,65 +1,66 @@
-import { collection, query, where } from "firebase/firestore";
+import { collection, orderBy, query, limit } from "firebase/firestore";
 import { db } from "../firebase";
 import { useCollection } from "../lib/useCollection";
-import { StatCard } from "../components/Common";
-import { AppUser, Material, Subscription, Teacher } from "../types";
+import { StatusPill, EmptyState, formatDate, formatTzs } from "../components/Common";
+import { Subscription } from "../types";
 
-// 1. Hamisha Queries zote nje ya component kuzuia infinite loops
-const studentsQuery = query(collection(db, "users"), where("role", "==", "STUDENT"));
-const teachersCollection = collection(db, "teachers");
-const activeSubsQuery = query(collection(db, "subscriptions"), where("status", "==", "ACTIVE"));
-const approvedMaterialsQuery = query(collection(db, "materials"), where("status", "==", "APPROVED"));
-const pendingTeachersQuery = query(collection(db, "teachers"), where("verificationStatus", "==", "PENDING"));
-const pendingMaterialsQuery = query(collection(db, "materials"), where("status", "==", "PENDING_REVIEW"));
+// 1. Query imewkwa nje ya component kuzuia infinite re-render loop
+const subscriptionsQuery = query(
+  collection(db, "subscriptions"),
+  orderBy("createdAt", "desc"),
+  limit(200)
+);
 
-export function DashboardHome() {
-  // 2. Weka default values ([]) kuzuia crash wakati wa loading
-  const { data: students = [], loading: l1 } = useCollection<AppUser>(studentsQuery);
-  const { data: teachers = [], loading: l2 } = useCollection<Teacher>(teachersCollection);
-  const { data: activeSubs = [], loading: l3 } = useCollection<Subscription>(activeSubsQuery);
-  const { data: approvedMaterials = [], loading: l4 } = useCollection<Material>(approvedMaterialsQuery);
-  const { data: pendingTeachers = [], loading: l5 } = useCollection<Teacher>(pendingTeachersQuery);
-  const { data: pendingMaterials = [], loading: l6 } = useCollection<Material>(pendingMaterialsQuery);
+export function SubscriptionsPage() {
+  const { data: subs = [], loading } = useCollection<Subscription>(subscriptionsQuery);
 
-  const loading = l1 || l2 || l3 || l4 || l5 || l6;
-
-  // Safe checks kuzuia map errors
-  const safeStudents = Array.isArray(students) ? students : [];
-  const safeTeachers = Array.isArray(teachers) ? teachers : [];
-  const safeActiveSubs = Array.isArray(activeSubs) ? activeSubs : [];
-  const safeApprovedMaterials = Array.isArray(approvedMaterials) ? approvedMaterials : [];
-  const safePendingTeachers = Array.isArray(pendingTeachers) ? pendingTeachers : [];
-  const safePendingMaterials = Array.isArray(pendingMaterials) ? pendingMaterials : [];
-
-  const revenueTzs = safeActiveSubs.reduce((sum, s) => sum + (s?.amountTzs || 0), 0);
+  // 2. Kinga ya uhakika ili kuzuia crash kama data bado haijafika
+  const safeSubs = Array.isArray(subs) ? subs : [];
 
   return (
     <div className="main">
       <div className="page-header">
         <div>
-          <h1>Overview</h1>
-          <p>Live snapshot across students, teachers, content and revenue.</p>
+          <h1>Subscriptions</h1>
+          <p>Payment log — every subscription is verified server-side before activation.</p>
         </div>
       </div>
 
-      <div className="stat-grid">
-        <StatCard label="Registered students" value={loading ? "—" : safeStudents.length} />
-        <StatCard label="Teachers" value={loading ? "—" : safeTeachers.length} />
-        <StatCard label="Active subscribers" value={loading ? "—" : safeActiveSubs.length} />
-        <StatCard label="Approved materials" value={loading ? "—" : safeApprovedMaterials.length} />
-        <StatCard label="Active-plan revenue" value={loading ? "—" : `${revenueTzs.toLocaleString()} TZS`} />
-        <StatCard label="Pending teacher reviews" value={loading ? "—" : safePendingTeachers.length} />
-        <StatCard label="Pending content reviews" value={loading ? "—" : safePendingMaterials.length} />
-      </div>
-
-      {!loading && (safePendingTeachers.length > 0 || safePendingMaterials.length > 0) && (
-        <div className="card" style={{ borderColor: "var(--gold)" }}>
-          <strong>Needs your attention</strong>
-          <p style={{ color: "var(--ink-soft)", fontSize: "0.88rem", margin: "6px 0 0" }}>
-            {safePendingTeachers.length > 0 && `${safePendingTeachers.length} teacher application(s) waiting for review. `}
-            {safePendingMaterials.length > 0 && `${safePendingMaterials.length} material(s) waiting for moderation.`}
-          </p>
-        </div>
+      {loading ? (
+        <EmptyState text="Loading…" />
+      ) : safeSubs.length === 0 ? (
+        <EmptyState text="No subscriptions yet." />
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Plan</th>
+              <th>Amount</th>
+              <th>Channel</th>
+              <th>Transaction ref</th>
+              <th>Status</th>
+              <th>Period</th>
+            </tr>
+          </thead>
+          <tbody>
+            {safeSubs.map((s) => (
+              <tr key={s.subscriptionId || Math.random().toString()}>
+                <td>{s.userId || "N/A"}</td>
+                <td>{s.planType || "N/A"}</td>
+                <td>{formatTzs(s.amountTzs || 0)}</td>
+                <td>{s.channel ? s.channel.replace("_", " ") : "N/A"}</td>
+                <td style={{ fontFamily: "monospace", fontSize: "0.82rem" }}>
+                  {s.transactionId || "—"}
+                </td>
+                <td><StatusPill status={s.status} /></td>
+                <td>
+                  {s.startDate ? formatDate(s.startDate) : "N/A"} – {s.endDate ? formatDate(s.endDate) : "N/A"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );
