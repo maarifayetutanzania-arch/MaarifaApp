@@ -6,8 +6,14 @@ import { StatusPill, EmptyState } from "../components/Common";
 import { Teacher } from "../types";
 import { adminApi } from "../lib/adminApi";
 
+// Query imewekwa nje ya component kuzuia re-creation kwenye kila render
+const teachersQuery = query(
+  collection(db, "teachers"),
+  orderBy("verificationStatus")
+);
+
 export function TeachersPage() {
-  const { data: teachers, loading } = useCollection<Teacher>(query(collection(db, "teachers"), orderBy("verificationStatus")));
+  const { data: teachers, loading } = useCollection<Teacher>(teachersQuery);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState("");
@@ -32,7 +38,9 @@ export function TeachersPage() {
     }
   };
 
-  const sorted = [...teachers].sort((a, b) => (a.verificationStatus === "PENDING" ? -1 : 1));
+  const sorted = [...teachers].sort((a, b) =>
+    a.verificationStatus === "PENDING" ? -1 : 1
+  );
 
   return (
     <div className="main">
@@ -64,17 +72,27 @@ export function TeachersPage() {
               <Fragment key={t.teacherId}>
                 <tr>
                   <td>{t.teacherId}</td>
-                  <td><StatusPill status={t.verificationStatus} /></td>
+                  <td>
+                    <StatusPill status={t.verificationStatus} />
+                  </td>
                   <td>{t.totalUploads}</td>
                   <td>{t.engagementScore.toFixed(1)}</td>
                   <td>{t.earningsBalanceTzs.toLocaleString()} TZS</td>
                   <td>
                     {t.verificationStatus === "PENDING" && (
                       <div className="row-actions">
-                        <button className="btn-primary" disabled={busyId === t.teacherId} onClick={() => approve(t.teacherId)}>
+                        <button
+                          className="btn-primary"
+                          disabled={busyId === t.teacherId}
+                          onClick={() => approve(t.teacherId)}
+                        >
                           Approve
                         </button>
-                        <button className="btn-danger" disabled={busyId === t.teacherId} onClick={() => setRejectingId(t.teacherId)}>
+                        <button
+                          className="btn-danger"
+                          disabled={busyId === t.teacherId}
+                          onClick={() => setRejectingId(t.teacherId)}
+                        >
                           Reject
                         </button>
                       </div>
@@ -90,8 +108,18 @@ export function TeachersPage() {
                           value={rejectNotes}
                           onChange={(e) => setRejectNotes(e.target.value)}
                         />
-                        <button className="btn-danger" onClick={() => submitReject(t.teacherId)}>Confirm reject</button>
-                        <button className="btn-ghost" onClick={() => setRejectingId(null)}>Cancel</button>
+                        <button
+                          className="btn-danger"
+                          onClick={() => submitReject(t.teacherId)}
+                        >
+                          Confirm reject
+                        </button>
+                        <button
+                          className="btn-ghost"
+                          onClick={() => setRejectingId(null)}
+                        >
+                          Cancel
+                        </button>
                       </div>
                     </td>
                   </tr>
