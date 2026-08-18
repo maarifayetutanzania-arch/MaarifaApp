@@ -2,17 +2,28 @@ import { Fragment, useState } from "react";
 import { collection, orderBy, query } from "firebase/firestore";
 import { db } from "../firebase";
 import { useCollection } from "../lib/useCollection";
-import { StatusPill, EmptyState, formatDate, formatTzs } from "../components/Common";
+import { StatusPill, EmptyState, formatTzs } from "../components/Common";
 import { Payout } from "../types";
 import { adminApi } from "../lib/adminApi";
 
+// 1. Query imewkwa nje kuzuia infinite re-render
+const payoutsQuery = query(
+  collection(db, "payouts"),
+  orderBy("createdAt", "desc")
+);
+
 export function PayoutsPage() {
-  const { data: payouts, loading } = useCollection<Payout>(query(collection(db, "payouts"), orderBy("createdAt", "desc")));
+  const { data: payouts = [], loading } = useCollection<Payout>(payoutsQuery);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [txnId, setTxnId] = useState("");
 
-  const totalPending = payouts.filter((p) => p.status === "GENERATED" || p.status === "APPROVED").reduce((s, p) => s + p.calculatedAmountTzs, 0);
+  // 2. Kinga ya safe array handling kuzuia crash ikitokea data ni undefined
+  const safePayouts = Array.isArray(payouts) ? payouts : [];
+
+  const totalPending = safePayouts
+    .filter((p) => p?.status === "GENERATED" || p?.status === "APPROVED")
+    .reduce((s, p) => s + (p?.calculatedAmountTzs || 0), 0);
 
   const approve = async (payoutId: string) => {
     setBusyId(payoutId);
@@ -37,7 +48,10 @@ export function PayoutsPage() {
   const flagException = async (payoutId: string) => {
     setBusyId(payoutId);
     try {
-      await adminApi.flagPayoutException(payoutId, "Flagged by admin for manual review");
+      await adminApi.flagPayoutException(
+        payoutId,
+        "Flagged by admin for manual review"
+      );
     } finally {
       setBusyId(null);
     }
@@ -48,7 +62,10 @@ export function PayoutsPage() {
       <div className="page-header">
         <div>
           <h1>Payouts</h1>
-          <p>Generated automatically each period from verified revenue and engagement — review and release below.</p>
+          <p>
+            Generated automatically each period from verified revenue and
+            engagement — review and release below.
+          </p>
         </div>
       </div>
 
@@ -61,7 +78,7 @@ export function PayoutsPage() {
 
       {loading ? (
         <EmptyState text="Loading…" />
-      ) : payouts.length === 0 ? (
+      ) : safePayouts.length === 0 ? (
         <EmptyState text="No payouts generated yet — these appear automatically once a monthly earnings run has revenue and engagement to distribute." />
       ) : (
         <table>
@@ -76,28 +93,43 @@ export function PayoutsPage() {
             </tr>
           </thead>
           <tbody>
-            {payouts.map((p) => (
+            {safePayouts.map((p) => (
               <Fragment key={p.payoutId}>
                 <tr>
-                  <td>{p.teacherName || p.teacherId}</td>
-                  <td>{p.period}</td>
-                  <td>{p.engagementSharePercent.toFixed(1)}%</td>
-                  <td>{formatTzs(p.calculatedAmountTzs)}</td>
-                  <td><StatusPill status={p.status} /></td>
+                  <td>{p.teacherName || p.teacherId || "N/A"}</td>
+                  <td>{p.period || "N/A"}</td>
+                  <td>{(p.engagementSharePercent || 0).toFixed(1)}%</td>
+                  <td>{formatTzs(p.calculatedAmountTzs || 0)}</td>
+                  <td>
+                    <StatusPill status={p.status} />
+                  </td>
                   <td>
                     <div className="row-actions">
                       {p.status === "GENERATED" && (
-                        <button className="btn-primary" disabled={busyId === p.payoutId} onClick={() => approve(p.payoutId)}>
+                        <button
+                          className="btn-primary"
+                          disabled={busyId === p.payoutId}
+                          onClick={() => approve(p.payoutId)}
+                        >
                           Approve
                         </button>
                       )}
                       {p.status === "APPROVED" && (
-                        <button className="btn-primary" disabled={busyId === p.payoutId} onClick={() => setPayingId(p.payoutId)}>
+                        <button
+                          className="btn-primary"
+                          disabled={busyId === p.payoutId}
+                          onClick={() => setPayingId(p.payoutId)}
+                        >
                           Mark paid
                         </button>
                       )}
-                      {(p.status === "GENERATED" || p.status === "APPROVED") && (
-                        <button className="btn-danger" disabled={busyId === p.payoutId} onClick={() => flagException(p.payoutId)}>
+                      {(p.status === "GENERATED" ||
+                        p.status === "APPROVED") && (
+                        <button
+                          className="btn-danger"
+                          disabled={busyId === p.payoutId}
+                          onClick={() => flagException(p.payoutId)}
+                        >
                           Flag
                         </button>
                       )}
@@ -108,9 +140,23 @@ export function PayoutsPage() {
                   <tr>
                     <td colSpan={6}>
                       <div style={{ display: "flex", gap: 8 }}>
-                        <input placeholder="Bank/mobile-money transaction reference" value={txnId} onChange={(e) => setTxnId(e.target.value)} />
-                        <button className="btn-primary" onClick={() => markPaid(p.payoutId)}>Confirm paid</button>
-                        <button className="btn-ghost" onClick={() => setPayingId(null)}>Cancel</button>
+                        <input
+                          placeholder="Bank/mobile-money transaction reference"
+                          value={txnId}
+                          onChange={(e) => setTxnId(e.target.value)}
+                        />
+                        <button
+                          className="btn-primary"
+                          onClick={() => markPaid(p.payoutId)}
+                        >
+                          Confirm paid
+                        </button>
+                        <button
+                          className="btn-ghost"
+                          onClick={() => setPayingId(null)}
+                        >
+                          Cancel
+                        </button>
                       </div>
                     </td>
                   </tr>
