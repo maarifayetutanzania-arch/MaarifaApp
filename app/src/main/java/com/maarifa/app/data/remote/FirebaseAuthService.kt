@@ -19,7 +19,8 @@ import java.util.concurrent.TimeUnit
 /** Thin wrapper around FirebaseAuth covering all three PRD 8.1 sign-in methods. */
 class FirebaseAuthService {
 
-    val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    // Tumia 'by lazy' hapa ili kuzuia crash wakati wa app startup
+    val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
     val currentUserId: String? get() = auth.currentUser?.uid
     val isSignedIn: Boolean get() = auth.currentUser != null
