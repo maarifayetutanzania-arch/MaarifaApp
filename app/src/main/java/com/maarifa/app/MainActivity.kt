@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Hakikisha Firebase inakuwa initialized kabla ya kitu chochote
+        // Initialize Firebase hapa kabla ya kuanza Compose UI
         try {
             FirebaseApp.initializeApp(this)
         } catch (e: Exception) {
@@ -40,13 +40,13 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                val container = maarifaContainer()
                 val scope = rememberCoroutineScope()
                 
                 LaunchedEffect(Unit) {
-                    try {
-                        val container = maarifaContainer()
-                        val uid = container.authRepository.currentUserId
-                        if (uid != null) {
+                    val uid = container.authRepository.currentUserId
+                    if (uid != null) {
+                        try {
                             FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
                                 scope.launch { 
                                     try {
@@ -56,9 +56,9 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             }
+                        } catch (e: Exception) {
+                            Log.e("MainActivity", "Error getting FCM token: ${e.message}")
                         }
-                    } catch (e: Exception) {
-                        Log.e("MainActivity", "Error initializing container or messaging: ${e.message}")
                     }
                 }
 
