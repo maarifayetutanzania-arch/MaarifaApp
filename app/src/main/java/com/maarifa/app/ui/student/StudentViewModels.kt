@@ -16,11 +16,13 @@ import com.maarifa.app.data.repository.PaymentRepository
 import com.maarifa.app.data.repository.SubscriptionRepository
 import com.maarifa.app.domain.AccessControlUseCase
 import com.maarifa.app.util.Resource
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 // ---------------- Library ----------------
@@ -41,27 +43,49 @@ class LibraryViewModel(
     private val _state = MutableStateFlow(LibraryUiState())
     val state: StateFlow<LibraryUiState> = _state.asStateFlow()
 
-    init { reload() }
+    private var libraryJob: Job? = null
+
+    init {
+        reload()
+    }
 
     fun reload() {
-        materialRepository.observeLibrary(_state.value.formFilter, _state.value.subjectFilter)
+        libraryJob?.cancel()
+        libraryJob = materialRepository.observeLibrary(_state.value.formFilter, _state.value.subjectFilter)
             .onEach { res ->
-                _state.value = when (res) {
-                    is Resource.Success -> _state.value.copy(isLoading = false, allMaterials = res.data, errorMessage = null)
-                        .let { it.copy(visibleMaterials = materialRepository.filterBySearch(it.allMaterials, it.query)) }
-                    is Resource.Error -> _state.value.copy(isLoading = false, errorMessage = res.message)
-                    Resource.Loading -> _state.value.copy(isLoading = true)
+                _state.update { current ->
+                    when (res) {
+                        is Resource.Success -> {
+                            val filtered = materialRepository.filterBySearch(res.data, current.query)
+                            current.copy(
+                                isLoading = false,
+                                allMaterials = res.data,
+                                visibleMaterials = filtered,
+                                errorMessage = null
+                            )
+                        }
+                        is Resource.Error -> current.copy(
+                            isLoading = false,
+                            errorMessage = res.message
+                        )
+                        Resource.Loading -> current.copy(isLoading = true)
+                    }
                 }
             }
             .launchIn(viewModelScope)
     }
 
     fun onQueryChange(query: String) {
-        _state.value = _state.value.copy(query = query, visibleMaterials = materialRepository.filterBySearch(_state.value.allMaterials, query))
+        _state.update { current ->
+            current.copy(
+                query = query,
+                visibleMaterials = materialRepository.filterBySearch(current.allMaterials, query)
+            )
+        }
     }
 
     fun setFilters(form: String?, subject: String?) {
-        _state.value = _state.value.copy(formFilter = form, subjectFilter = subject)
+        _state.update { it.copy(formFilter = form, subjectFilter = subject) }
         reload()
     }
 }
@@ -92,11 +116,21 @@ class MaterialDetailViewModel(
         val userId = authRepository.currentUserId
         viewModelScope.launch {
             when (val res = materialRepository.getMaterial(materialId)) {
-                is Resource.Success -> _state.value = _state.value.copy(
-                    isLoading = false, material = res.data,
-                    isDownloaded = downloadRepository.isDownloadedLocally(materialId)
-                )
-                is Resource.Error -> _state.value = _state.value.copy(isLoading = false, errorMessage = res.message)
+                is Resource.Success -> {
+                    val downloaded = downloadRepository.isDownloadedLocally(materialId)
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            material = res.data,
+                            isDownloaded = downloaded
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _state.update {
+                        it.copy(isLoading = false, errorMessage = res.message)
+                    }
+                }
                 Resource.Loading -> Unit
             }
         }
@@ -105,28 +139,35 @@ class MaterialDetailViewModel(
                 if (res is Resource.Success) {
                     val decision = _state.value.material?.let { AccessControlUseCase.canViewOnline(it, res.data) }
                         ?: AccessControlUseCase.AccessDecision.SubscriptionRequired
-                    _state.value = _state.value.copy(subscription = res.data, accessDecision = decision)
+                    _state.update {
+                        it.copy(subscription = res.data, accessDecision = decision)
+                    }
                 }
             }.launchIn(viewModelScope)
         }
     }
 
-    fun save() = viewModelScope.launch { materialRepository.incrementSaveCount(materialId) }
+    fun save() = viewModelScope.launch { 
+        materialRepository.incrementSaveCount(materialId) 
+    }
 
     fun download() {
         val userId = authRepository.currentUserId ?: return
         val material = _state.value.material ?: return
         if (AccessControlUseCase.canStartDownload(material, _state.value.subscription) != AccessControlUseCase.AccessDecision.Allowed) return
+        
         viewModelScope.launch {
-            _state.value = _state.value.copy(downloadProgress = 0f)
+            _state.update { it.copy(downloadProgress = 0f) }
             val result = downloadRepository.downloadMaterial(userId, materialId, material.fileUrl) { progress ->
-                _state.value = _state.value.copy(downloadProgress = progress)
+                _state.update { it.copy(downloadProgress = progress) }
             }
-            _state.value = _state.value.copy(
-                downloadProgress = null,
-                isDownloaded = result is Resource.Success,
-                errorMessage = (result as? Resource.Error)?.message
-            )
+            _state.update {
+                it.copy(
+                    downloadProgress = null,
+                    isDownloaded = result is Resource.Success,
+                    errorMessage = (result as? Resource.Error)?.message
+                )
+            }
         }
     }
 }
@@ -151,7 +192,9 @@ class SubscriptionViewModel(
     init {
         authRepository.currentUserId?.let { uid ->
             subscriptionRepository.observeLatestSubscription(uid).onEach { res ->
-                if (res is Resource.Success) _state.value = _state.value.copy(subscription = res.data)
+                if (res is Resource.Success) {
+                    _state.update { it.copy(subscription = res.data) }
+                }
             }.launchIn(viewModelScope)
         }
     }
@@ -159,13 +202,21 @@ class SubscriptionViewModel(
     fun subscribe(plan: PlanType, channel: PaymentChannel, payerAccountOrPhone: String) {
         val uid = authRepository.currentUserId ?: return
         viewModelScope.launch {
-            _state.value = _state.value.copy(isSubmitting = true, errorMessage = null, statusMessage = null)
+            _state.update { it.copy(isSubmitting = true, errorMessage = null, statusMessage = null) }
             when (val res = paymentRepository.initiatePayment(uid, plan, channel, payerAccountOrPhone)) {
-                is Resource.Success -> _state.value = _state.value.copy(
-                    isSubmitting = false,
-                    statusMessage = res.data.instructions ?: "Payment request sent. We'll activate your plan as soon as it's verified."
-                )
-                is Resource.Error -> _state.value = _state.value.copy(isSubmitting = false, errorMessage = res.message)
+                is Resource.Success -> {
+                    _state.update {
+                        it.copy(
+                            isSubmitting = false,
+                            statusMessage = res.data.instructions ?: "Payment request sent. We'll activate your plan as soon as it's verified."
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _state.update {
+                        it.copy(isSubmitting = false, errorMessage = res.message)
+                    }
+                }
                 Resource.Loading -> Unit
             }
         }
@@ -190,10 +241,12 @@ class DownloadsViewModel(
     init {
         authRepository.currentUserId?.let { uid ->
             downloadRepository.observeDownloads(uid).onEach { res ->
-                _state.value = when (res) {
-                    is Resource.Success -> _state.value.copy(isLoading = false, downloads = res.data)
-                    is Resource.Error -> _state.value.copy(isLoading = false, errorMessage = res.message)
-                    Resource.Loading -> _state.value.copy(isLoading = true)
+                _state.update { current ->
+                    when (res) {
+                        is Resource.Success -> current.copy(isLoading = false, downloads = res.data)
+                        is Resource.Error -> current.copy(isLoading = false, errorMessage = res.message)
+                        Resource.Loading -> current.copy(isLoading = true)
+                    }
                 }
             }.launchIn(viewModelScope)
         }
@@ -201,15 +254,22 @@ class DownloadsViewModel(
 
     fun remove(materialId: String) {
         val uid = authRepository.currentUserId ?: return
-        viewModelScope.launch { downloadRepository.removeDownload(uid, materialId) }
+        viewModelScope.launch { 
+            downloadRepository.removeDownload(uid, materialId) 
+        }
     }
 }
 
 // ---------------- Profile ----------------
 
-data class StudentProfileUiState(val user: User? = null, val isLoading: Boolean = true)
+data class StudentProfileUiState(
+    val user: User? = null, 
+    val isLoading: Boolean = true
+)
 
-class StudentProfileViewModel(private val authRepository: AuthRepository) : ViewModel() {
+class StudentProfileViewModel(
+    private val authRepository: AuthRepository
+) : ViewModel() {
     private val _state = MutableStateFlow(StudentProfileUiState())
     val state: StateFlow<StudentProfileUiState> = _state.asStateFlow()
 
@@ -217,7 +277,12 @@ class StudentProfileViewModel(private val authRepository: AuthRepository) : View
         authRepository.currentUserId?.let { uid ->
             viewModelScope.launch {
                 val res = authRepository.fetchUserProfile(uid)
-                _state.value = StudentProfileUiState(user = (res as? Resource.Success)?.data, isLoading = false)
+                _state.update {
+                    StudentProfileUiState(
+                        user = (res as? Resource.Success)?.data,
+                        isLoading = false
+                    )
+                }
             }
         }
     }
