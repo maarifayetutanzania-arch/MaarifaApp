@@ -1,26 +1,41 @@
 package com.maarifa.app.ui.teacher
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.maarifa.app.data.model.Material
 import com.maarifa.app.data.model.MaterialStatus
@@ -35,24 +50,49 @@ import com.maarifa.app.ui.common.StatusPill
 fun TeacherMaterialsScreen() {
     val container = maarifaContainer()
     val vm: TeacherMaterialsViewModel = viewModel(
-        factory = SimpleViewModelFactory { TeacherMaterialsViewModel(container.materialRepository, container.authRepository) }
+        factory = SimpleViewModelFactory {
+            TeacherMaterialsViewModel(container.materialRepository, container.authRepository)
+        }
     )
     val state by vm.state.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 20.dp)) {
-        Text("My materials", style = MaterialTheme.typography.headlineMedium)
-        Text(
-            "Track approval status and reach for everything you've uploaded.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 3.dp, bottom = 18.dp)
-        )
-        when {
-            state.isLoading -> LoadingState()
-            state.errorMessage != null -> ErrorState(state.errorMessage!!)
-            state.materials.isEmpty() -> EmptyState("You haven't uploaded anything yet.")
-            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(state.materials, key = { it.materialId }) { TeacherMaterialRow(it) }
+    val darkGreen = Color(0xFF1B5E20)
+    val backgroundGradient = Brush.verticalGradient(
+        colors = listOf(Color(0xFFE8F5E9), Color(0xFFC8E6C9), Color(0xFFA5D6A7))
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundGradient)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 20.dp)
+        ) {
+            Text(
+                text = "My materials",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = darkGreen
+            )
+            Text(
+                text = "Track approval status and reach for everything you've uploaded.",
+                fontSize = 14.sp,
+                color = Color.DarkGray.copy(alpha = 0.8f),
+                modifier = Modifier.padding(top = 4.dp, bottom = 18.dp)
+            )
+
+            when {
+                state.isLoading -> LoadingState()
+                state.errorMessage != null -> ErrorState(state.errorMessage!!)
+                state.materials.isEmpty() -> EmptyState("You haven't uploaded anything yet.")
+                else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(state.materials, key = { it.materialId }) { material ->
+                        TeacherMaterialRow(material)
+                    }
+                }
             }
         }
     }
@@ -60,34 +100,120 @@ fun TeacherMaterialsScreen() {
 
 @Composable
 private fun TeacherMaterialRow(material: Material) {
+    val primaryGreen = Color(0xFF1E7F55)
+    val lightGreenBg = Color(0xFFE8F5E9)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                Text(material.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f).padding(end = 8.dp))
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(lightGreenBg),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MenuBook,
+                            contentDescription = null,
+                            tint = primaryGreen,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Text(
+                        text = material.title,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.DarkGray
+                    )
+                }
+
                 val (bg, fg, label) = when (material.status) {
-                    MaterialStatus.APPROVED.name -> Triple(Color(0xFFEBF2EC), Color(0xFF1F6B45), "Approved")
-                    MaterialStatus.REJECTED.name -> Triple(Color(0xFFF7E5E1), Color(0xFFB6503F), "Rejected")
-                    else -> Triple(Color(0xFFF8F1E2), Color(0xFF9A7530), "Pending review")
+                    MaterialStatus.APPROVED.name -> Triple(Color(0xFFE8F5E9), Color(0xFF1E7F55), "Approved")
+                    MaterialStatus.REJECTED.name -> Triple(Color(0xFFFFEBEE), Color(0xFFC62828), "Rejected")
+                    else -> Triple(Color(0xFFFFF8E1), Color(0xFFF57F17), "Pending review")
                 }
                 StatusPill(label, bg, fg)
             }
+
             Text(
-                "${material.subject} • ${material.topic}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 3.dp, bottom = 8.dp)
+                text = "${material.subject} • ${material.topic}",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("${material.uniqueReaderCount} readers", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("${material.totalReadCount} reads", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.People,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "${material.uniqueReaderCount} readers",
+                        fontSize = 12.sp,
+                        color = Color.DarkGray,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Visibility,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "${material.totalReadCount} reads",
+                        fontSize = 12.sp,
+                        color = Color.DarkGray,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
+
             if (material.status == MaterialStatus.REJECTED.name && material.rejectionReason.isNotBlank()) {
-                Text(material.rejectionReason, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFFFFEBEE))
+                        .padding(10.dp)
+                ) {
+                    Text(
+                        text = "Reason: ${material.rejectionReason}",
+                        fontSize = 12.sp,
+                        color = Color(0xFFC62828),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
