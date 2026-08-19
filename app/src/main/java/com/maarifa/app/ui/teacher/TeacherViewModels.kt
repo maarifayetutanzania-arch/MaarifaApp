@@ -16,8 +16,10 @@ import com.maarifa.app.util.Resource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 // ---------------- Dashboard (verification status + live stats) ----------------
@@ -41,15 +43,21 @@ class TeacherDashboardViewModel(
         if (uid != null) {
             viewModelScope.launch {
                 val res = authRepository.fetchUserProfile(uid)
-                _state.value = _state.value.copy(user = (res as? Resource.Success)?.data)
+                if (res is Resource.Success) {
+                    _state.update { it.copy(user = res.data) }
+                }
             }
             teacherRepository.observeTeacher(uid).onEach { res ->
-                _state.value = when (res) {
-                    is Resource.Success -> _state.value.copy(isLoading = false, teacher = res.data)
-                    is Resource.Error -> _state.value.copy(isLoading = false, errorMessage = res.message)
-                    Resource.Loading -> _state.value.copy(isLoading = true)
+                _state.update { currentState ->
+                    when (res) {
+                        is Resource.Success -> currentState.copy(isLoading = false, teacher = res.data, errorMessage = null)
+                        is Resource.Error -> currentState.copy(isLoading = false, errorMessage = res.message)
+                        Resource.Loading -> currentState.copy(isLoading = true)
+                    }
                 }
             }.launchIn(viewModelScope)
+        } else {
+            _state.update { it.copy(isLoading = false, errorMessage = "User session expired.") }
         }
     }
 
@@ -85,9 +93,18 @@ class UploadMaterialViewModel(
         viewModelScope.launch {
             _state.value = UploadUiState(isSubmitting = true, progress = 0f)
             val result = materialRepository.uploadMaterial(
-                teacherId = uid, teacherName = teacherName, title = title, description = description,
-                form = form, subject = subject, topic = topic, fileUri = fileUri, fileType = MaterialFileType.PDF.name
-            ) { progress -> _state.value = _state.value.copy(progress = progress) }
+                teacherId = uid,
+                teacherName = teacherName,
+                title = title,
+                description = description,
+                form = form,
+                subject = subject,
+                topic = topic,
+                fileUri = fileUri,
+                fileType = MaterialFileType.PDF.name
+            ) { progress ->
+                _state.update { it.copy(progress = progress) }
+            }
 
             _state.value = when (result) {
                 is Resource.Success -> UploadUiState(successMessage = "Uploaded — pending admin review.")
@@ -97,7 +114,9 @@ class UploadMaterialViewModel(
         }
     }
 
-    fun resetStatus() { _state.value = UploadUiState() }
+    fun resetStatus() {
+        _state.value = UploadUiState()
+    }
 }
 
 // ---------------- Teacher's own materials ----------------
@@ -118,12 +137,16 @@ class TeacherMaterialsViewModel(
     init {
         authRepository.currentUserId?.let { uid ->
             materialRepository.observeTeacherMaterials(uid).onEach { res ->
-                _state.value = when (res) {
-                    is Resource.Success -> _state.value.copy(isLoading = false, materials = res.data)
-                    is Resource.Error -> _state.value.copy(isLoading = false, errorMessage = res.message)
-                    Resource.Loading -> _state.value.copy(isLoading = true)
+                _state.update { currentState ->
+                    when (res) {
+                        is Resource.Success -> currentState.copy(isLoading = false, materials = res.data, errorMessage = null)
+                        is Resource.Error -> currentState.copy(isLoading = false, errorMessage = res.message)
+                        Resource.Loading -> currentState.copy(isLoading = true)
+                    }
                 }
             }.launchIn(viewModelScope)
+        } ?: run {
+            _state.update { it.copy(isLoading = false, errorMessage = "User session expired.") }
         }
     }
 }
@@ -146,14 +169,28 @@ class TeacherEarningsViewModel(
     val state: StateFlow<TeacherEarningsUiState> = _state.asStateFlow()
 
     init {
-        authRepository.currentUserId?.let { uid ->
-            teacherRepository.observeTeacher(uid).onEach { res ->
-                if (res is Resource.Success) _state.value = _state.value.copy(isLoading = false, teacher = res.data)
-            }.launchIn(viewModelScope)
+        val uid = authRepository.currentUserId
+        if (uid != null) {
+            combine(
+                teacherRepository.observeTeacher(uid),
+                payoutRepository.observePayouts(uid)
+            ) { teacherRes, payoutRes ->
+                val teacher = (teacherRes as? Resource.Success)?.data
+                val payouts = (payoutRes as? Resource.Success)?.data ?: emptyList()
+                val isLoading = teacherRes is Resource.Loading || payoutRes is Resource.Loading
+                val error = (teacherRes as? Resource.Error)?.message ?: (payoutRes as? Resource.Error)?.message
 
-            payoutRepository.observePayouts(uid).onEach { res ->
-                if (res is Resource.Success) _state.value = _state.value.copy(payouts = res.data)
+                TeacherEarningsUiState(
+                    isLoading = isLoading,
+                    teacher = teacher,
+                    payouts = payouts,
+                    errorMessage = error
+                )
+            }.onEach { updatedState ->
+                _state.value = updatedState
             }.launchIn(viewModelScope)
+        } else {
+            _state.update { it.copy(isLoading = false, errorMessage = "User session expired.") }
         }
     }
 }
