@@ -59,8 +59,8 @@ class AuthViewModel(
         }
     }
 
-    fun clearError() { 
-        _state.value = _state.value.copy(errorMessage = null) 
+    fun clearError() {
+        _state.value = _state.value.copy(errorMessage = null)
     }
 
     fun signInWithEmail(email: String, password: String) = viewModelScope.launch {
@@ -98,7 +98,7 @@ class AuthViewModel(
                     is FirebaseAuthService.OtpEvent.CodeSent ->
                         _state.value = _state.value.copy(
                             isSubmitting = false,
-                            otpVerificationId = event.verificationId, 
+                            otpVerificationId = event.verificationId,
                             errorMessage = null
                         )
                     is FirebaseAuthService.OtpEvent.AutoVerified ->
@@ -108,13 +108,13 @@ class AuthViewModel(
                         )
                     is FirebaseAuthService.OtpEvent.Failed ->
                         _state.value = _state.value.copy(
-                            isSubmitting = false, 
+                            isSubmitting = false,
                             errorMessage = event.message
                         )
                 }
             }
-            .catch { e -> 
-                _state.value = _state.value.copy(isSubmitting = false, errorMessage = e.message) 
+            .catch { e ->
+                _state.value = _state.value.copy(isSubmitting = false, errorMessage = e.message)
             }
             .launchIn(viewModelScope)
     }
@@ -141,16 +141,16 @@ class AuthViewModel(
     private suspend fun loadProfileAfterAuth(uid: String) {
         when (val result = authRepository.fetchUserProfile(uid)) {
             is Resource.Success -> _state.value = _state.value.copy(
-                isSubmitting = false, 
-                isSignedIn = true, 
+                isSubmitting = false,
+                isSignedIn = true,
                 profile = result.data,
                 otpVerificationId = null,
                 otpAutoCredential = null
             )
             is Resource.Error -> _state.value = _state.value.copy(
-                isSubmitting = false, 
-                isSignedIn = true, 
-                profile = null, // needs registration step
+                isSubmitting = false,
+                isSignedIn = true,
+                profile = null,
                 otpVerificationId = null,
                 otpAutoCredential = null
             )
