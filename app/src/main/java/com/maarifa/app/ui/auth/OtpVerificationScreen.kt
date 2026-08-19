@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -25,16 +26,30 @@ fun OtpVerificationScreen(authViewModel: AuthViewModel, verificationId: String) 
     val state by authViewModel.state.collectAsState()
     var code by remember { mutableStateOf("") }
 
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
         Text("Enter verification code", style = MaterialTheme.typography.headlineMedium)
         Text("We texted a 6-digit code to your phone.", style = MaterialTheme.typography.bodyMedium)
+        
         OutlinedTextField(
             value = code,
-            onValueChange = { code = it },
+            onValueChange = { input ->
+                // Ruhusu namba tu na usizidi tarakimu 6
+                if (input.length <= 6 && input.all { it.isDigit() }) {
+                    code = input
+                }
+            },
             label = { Text("6-digit code") },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-            modifier = Modifier.fillMaxWidth()
+            enabled = !state.isSubmitting,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
+        
         GradientButton(
             text = "Verify",
             onClick = { authViewModel.confirmOtp(verificationId, code) },
@@ -42,7 +57,12 @@ fun OtpVerificationScreen(authViewModel: AuthViewModel, verificationId: String) 
             enabled = code.length == 6 && !state.isSubmitting
         )
 
-        state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        if (state.isSubmitting) CircularProgressIndicator()
+        state.errorMessage?.let { 
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) 
+        }
+        
+        if (state.isSubmitting) {
+            CircularProgressIndicator()
+        }
     }
 }
