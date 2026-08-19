@@ -1,6 +1,5 @@
 package com.maarifa.app.ui.auth
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,34 +37,73 @@ fun SplashScreen(authViewModel: AuthViewModel, navController: NavController) {
 
     LaunchedEffect(state.checkingSession, state.isSignedIn, state.profile) {
         if (state.checkingSession) return@LaunchedEffect
+
+        val profile = state.profile
         val destination = when {
             !state.isSignedIn -> Routes.WELCOME
-            state.profile == null -> Routes.REGISTER
-            state.profile!!.roleEnum == UserRole.TEACHER -> Routes.TEACHER_HOME
+            profile == null -> Routes.REGISTER
+            profile.roleEnum == UserRole.TEACHER -> Routes.TEACHER_HOME
             else -> Routes.STUDENT_HOME
         }
+
         navController.navigate(destination) {
             popUpTo(Routes.SPLASH) { inclusive = true }
         }
     }
 
-    val backgroundBrush = Brush.radialGradient(
-        colors = listOf(MaterialTheme.colorScheme.primary, MaarifaForestDeep),
-        center = Offset(0.3f, 0.15f),
-        radius = 1400f
-    )
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val backgroundBrush = remember(primaryColor) {
+        Brush.radialGradient(
+            colors = listOf(primaryColor, MaarifaForestDeep),
+            center = Offset(0.3f, 0.15f),
+            radius = 1400f
+        )
+    }
 
-    Box(modifier = Modifier.fillMaxSize().background(backgroundBrush), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundBrush),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
             Box(
-                modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.14f)),
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
+                Icon(
+                    imageVector = Icons.Default.MenuBook,
+                    contentDescription = "Maarifa Logo",
+                    tint = Color.White,
+                    modifier = Modifier.size(30.dp)
+                )
             }
-            Text("Maarifa 2026", style = MaterialTheme.typography.headlineMedium, color = Color.White)
-            Text("Learn. Teach. Grow.", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
-            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.padding(top = 16.dp).size(28.dp))
+
+            Text(
+                text = "Maarifa 2026",
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color.White
+            )
+
+            Text(
+                text = "Learn. Teach. Grow.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.8f)
+            )
+
+            CircularProgressIndicator(
+                color = Color.White,
+                strokeWidth = 2.dp,
+                modifier = Modifier
+                    .padding(top = 16.dp)
+                    .size(28.dp)
+            )
         }
     }
 }
