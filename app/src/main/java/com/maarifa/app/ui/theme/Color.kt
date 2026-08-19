@@ -1,18 +1,69 @@
 package com.maarifa.app.ui.theme
 
-import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
 
-// Refined "quiet premium" palette — softer, less saturated than the original bold
-// green/gold blocks, with deeper tonal range for real depth instead of flat fills.
-val MaarifaForest = Color(0xFF1F6B45)
-val MaarifaForestDeep = Color(0xFF0D3B28)
-val MaarifaForestTint = Color(0xFFEBF2EC)
-val MaarifaGold = Color(0xFFC99A3F)
-val MaarifaGoldTint = Color(0xFFF8F1E2)
-val MaarifaClay = Color(0xFFB6503F)
-val MaarifaClayTint = Color(0xFFF7E5E1)
-val MaarifaPaper = Color(0xFFF7F6F2)
-val MaarifaSurface = Color(0xFFFFFFFF)
-val MaarifaInk = Color(0xFF1A2420)
-val MaarifaInkSoft = Color(0xFF767F78)
-val MaarifaLine = Color(0xFFEBE9E2)
+private val LightColorScheme = lightColorScheme(
+    primary = MaarifaForest,
+    onPrimary = MaarifaSurface,
+    primaryContainer = MaarifaForestTint,
+    onPrimaryContainer = MaarifaForestDeep,
+
+    secondary = MaarifaGold,
+    onSecondary = MaarifaSurface,
+    secondaryContainer = MaarifaGoldTint,
+    onSecondaryContainer = MaarifaInk,
+
+    tertiary = MaarifaClay,
+    onTertiary = MaarifaSurface,
+    tertiaryContainer = MaarifaClayTint,
+    onTertiaryContainer = MaarifaInk,
+
+    background = MaarifaPaper,
+    onBackground = MaarifaInk,
+    surface = MaarifaSurface,
+    onSurface = MaarifaInk,
+    surfaceVariant = MaarifaPaper,
+    onSurfaceVariant = MaarifaInkSoft,
+
+    outline = MaarifaLine,
+    outlineVariant = MaarifaLine
+)
+
+private val DarkColorScheme = darkColorScheme(
+    primary = MaarifaForestTint,
+    onPrimary = MaarifaForestDeep,
+    primaryContainer = MaarifaForest,
+    onPrimaryContainer = MaarifaForestTint,
+
+    secondary = MaarifaGold,
+    onSecondary = MaarifaInk,
+    secondaryContainer = MaarifaForestDeep,
+    onSecondaryContainer = MaarifaGoldTint,
+
+    background = MaarifaForestDeep,
+    onBackground = MaarifaPaper,
+    surface = MaarifaInk,
+    onSurface = MaarifaPaper,
+    surfaceVariant = MaarifaForestDeep,
+    onSurfaceVariant = MaarifaInkSoft,
+
+    outline = MaarifaInkSoft
+)
+
+@Composable
+fun MaarifaTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography, // Inatoka kwenye Type.kt yako
+        content = content
+    )
+}
