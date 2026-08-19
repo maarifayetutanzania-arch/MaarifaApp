@@ -13,15 +13,15 @@ export function LoginPage() {
 
     setSubmitting(true);
     try {
-      await signIn(email, password);
-    } catch (err) {
-      // Auth errors zote zitashughulikiwa na AdminAuthContext
+      await signIn(email.trim(), password);
+    } catch {
+      // Errors zote zinashughulikiwa na AdminAuthContext
     } finally {
       setSubmitting(false);
     }
   };
 
-  // 1. Kama Auth bado inacheki status ya user (Initializing state)
+  // 1. Inapoangalia Hali ya Auth (Initializing state)
   if (loading && !firebaseUser) {
     return (
       <div className="login-shell">
@@ -32,7 +32,7 @@ export function LoginPage() {
     );
   }
 
-  // 2. User yupo signed in lakini hana nafasi ya Admin
+  // 2. User yupo signed in lakini hana idhini ya Admin
   if (!loading && firebaseUser && !isAdmin) {
     return (
       <div className="login-shell">
@@ -41,7 +41,7 @@ export function LoginPage() {
           <p style={{ color: "var(--ink-soft)", fontSize: "0.88rem" }}>
             {firebaseUser.email || "This account"} is signed in but doesn't have admin access on Maarifa 2026.
           </p>
-          <button className="btn-primary" onClick={signOut}>
+          <button type="button" className="btn-primary" onClick={signOut}>
             Sign out
           </button>
         </div>
@@ -49,7 +49,7 @@ export function LoginPage() {
     );
   }
 
-  // 3. Fomu ya kawaida ya Login
+  // 3. Fomu ya Kuingia (Login Form)
   return (
     <div className="login-shell">
       <form className="login-card" onSubmit={handleSubmit}>
@@ -58,25 +58,33 @@ export function LoginPage() {
           <span style={{ color: "var(--ink-soft)" }}>Admin console</span>
         </div>
 
-        <input
-          type="email"
-          placeholder="Admin email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          disabled={submitting}
-        />
-        
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          disabled={submitting}
-        />
+        <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <input
+            type="email"
+            placeholder="Admin email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="username"
+            required
+            disabled={submitting}
+          />
 
-        {error && <p className="error-text" style={{ color: "var(--danger, #e53e3e)", fontSize: "0.82rem" }}>{error}</p>}
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+            disabled={submitting}
+          />
+        </div>
+
+        {error && (
+          <p className="error-text" style={{ color: "var(--danger, #e53e3e)", fontSize: "0.82rem" }}>
+            {error}
+          </p>
+        )}
 
         <button type="submit" className="btn-primary" disabled={submitting || loading}>
           {submitting ? "Signing in…" : "Sign in"}
