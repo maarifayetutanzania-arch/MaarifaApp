@@ -1,7 +1,9 @@
 package com.maarifa.app.ui.student
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CloudDownload
@@ -9,7 +11,6 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -18,7 +19,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -41,16 +46,25 @@ private val studentTabs = listOf(StudentTab.Library, StudentTab.Downloads, Stude
 fun StudentHomeScreen(onSignedOut: () -> Unit) {
     val innerNav = rememberNavController()
 
+    // Maarifa Brand Colors
+    val primaryGreen = Color(0xFF1E7F55)
+    val lightGreenContainer = Color(0xFFE8F5E9)
+
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         bottomBar = {
             val backStackEntry by innerNav.currentBackStackEntryAsState()
             val currentRoute = backStackEntry?.destination
             Column {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
+                HorizontalDivider(color = Color(0xFFE0E0E0), thickness = 1.dp)
+                NavigationBar(
+                    containerColor = Color.White,
+                    tonalElevation = 8.dp
+                ) {
                     studentTabs.forEach { tab ->
+                        val selected = currentRoute?.hierarchy?.any { it.route == tab.route } == true
                         NavigationBarItem(
-                            selected = currentRoute?.hierarchy?.any { it.route == tab.route } == true,
+                            selected = selected,
                             onClick = {
                                 innerNav.navigate(tab.route) {
                                     popUpTo(innerNav.graph.findStartDestination().id) { saveState = true }
@@ -59,13 +73,19 @@ fun StudentHomeScreen(onSignedOut: () -> Unit) {
                                 }
                             },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label) },
+                            label = {
+                                Text(
+                                    text = tab.label,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                selectedIconColor = primaryGreen,
+                                selectedTextColor = primaryGreen,
+                                indicatorColor = lightGreenContainer,
+                                unselectedIconColor = Color.Gray,
+                                unselectedTextColor = Color.Gray
                             )
                         )
                     }
