@@ -71,6 +71,11 @@ fun UploadMaterialScreen(onUploaded: () -> Unit) {
 
     LaunchedEffect(state.successMessage) {
         if (state.successMessage != null) {
+            title = ""
+            description = ""
+            subject = ""
+            topic = ""
+            fileUri = null
             vm.resetStatus()
             onUploaded()
         }
@@ -120,7 +125,6 @@ fun UploadMaterialScreen(onUploaded: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Standardized Material 3 Dropdown
         ExposedDropdownMenuBox(
             expanded = formMenuExpanded,
             onExpandedChange = { formMenuExpanded = !formMenuExpanded },
@@ -180,7 +184,7 @@ fun UploadMaterialScreen(onUploaded: () -> Unit) {
             onClick = {
                 val selectedUri = fileUri ?: return@GradientButton
                 vm.upload(
-                    teacherName = teacherName,
+                    teacherName = teacherName.ifBlank { "Teacher" },
                     title = title,
                     description = description,
                     form = form.name,
