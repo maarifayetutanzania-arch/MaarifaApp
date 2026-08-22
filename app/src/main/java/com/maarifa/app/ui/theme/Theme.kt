@@ -5,35 +5,66 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color as ComposeColor
 
-private val LightColors = lightColorScheme(
+private val LightColorScheme = lightColorScheme(
     primary = MaarifaForest,
-    onPrimary = ComposeColor.White,
+    onPrimary = MaarifaSurface,
     primaryContainer = MaarifaForestTint,
     onPrimaryContainer = MaarifaForestDeep,
+
     secondary = MaarifaGold,
+    onSecondary = MaarifaSurface,
     secondaryContainer = MaarifaGoldTint,
+    onSecondaryContainer = MaarifaInk,
+
+    tertiary = MaarifaClay,
+    onTertiary = MaarifaSurface,
+    tertiaryContainer = MaarifaClayTint,
+    onTertiaryContainer = MaarifaInk,
+
     background = MaarifaPaper,
-    surface = MaarifaSurface,
-    surfaceVariant = MaarifaForestTint,
-    error = MaarifaClay,
-    errorContainer = MaarifaClayTint,
     onBackground = MaarifaInk,
+    surface = MaarifaSurface,
     onSurface = MaarifaInk,
+    surfaceVariant = MaarifaPaper,
     onSurfaceVariant = MaarifaInkSoft,
-    outline = MaarifaLine
+
+    outline = MaarifaLine,
+    outlineVariant = MaarifaLine
 )
 
-private val DarkColors = darkColorScheme(
-    primary = MaarifaForest,
+private val DarkColorScheme = darkColorScheme(
+    primary = MaarifaForestTint,
+    onPrimary = MaarifaForestDeep,
+    primaryContainer = MaarifaForest,
+    onPrimaryContainer = MaarifaForestTint,
+
     secondary = MaarifaGold,
+    onSecondary = MaarifaInk,
+    secondaryContainer = MaarifaForestDeep,
+    onSecondaryContainer = MaarifaGoldTint,
+
     background = MaarifaForestDeep,
-    surface = MaarifaForestDeep
+    onBackground = MaarifaPaper,
+    surface = MaarifaInk,
+    onSurface = MaarifaPaper,
+    surfaceVariant = MaarifaForestDeep,
+    onSurfaceVariant = MaarifaInkSoft,
+
+    outline = MaarifaInkSoft
 )
 
 @Composable
-fun MaarifaTheme(useDarkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    val colorScheme = if (useDarkTheme) DarkColors else LightColors
-    MaterialTheme(colorScheme = colorScheme, typography = MaarifaTypography, shapes = MaarifaShapes, content = content)
+fun MaarifaTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        shapes = MaarifaShapes,
+        content = content
+    )
 }
