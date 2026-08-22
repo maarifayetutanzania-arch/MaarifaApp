@@ -5,9 +5,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Weight is deliberately concentrated at the top of the scale (one true "loud" moment
-// per screen — headlineMedium) and tapers down quickly, instead of bold-everywhere.
-// Tight negative letter-spacing on the largest sizes reads as more considered/refined.
 val MaarifaTypography = Typography(
     headlineMedium = TextStyle(fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 32.sp, letterSpacing = (-0.4).sp),
     titleLarge = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 25.sp, letterSpacing = (-0.2).sp),
