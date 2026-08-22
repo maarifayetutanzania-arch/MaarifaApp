@@ -5,6 +5,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+
+// Ufafanuzi wa rangi za Maarifa ili kuzuia error ya "Unresolved reference"
+val MaarifaForest = Color(0xFF1B4332)
+val MaarifaForestTint = Color(0xFF40916C)
+val MaarifaForestDeep = Color(0xFF081C15)
+
+val MaarifaGold = Color(0xFFFFD700)
+val MaarifaGoldTint = Color(0xFFFFF3BF)
+
+val MaarifaClay = Color(0xFFB7094C)
+val MaarifaClayTint = Color(0xFFE07A5F)
+
+val MaarifaSurface = Color(0xFFFFFFFF)
+val MaarifaPaper = Color(0xFFF8F9FA)
+val MaarifaInk = Color(0xFF212529)
+val MaarifaInkSoft = Color(0xFF6C757D)
+val MaarifaLine = Color(0xFFDEE2E6)
 
 private val LightColorScheme = lightColorScheme(
     primary = MaarifaForest,
@@ -63,7 +81,7 @@ fun MaarifaTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography, // Inatoka kwenye Type.kt yako
+        typography = Typography,
         content = content
     )
 }
