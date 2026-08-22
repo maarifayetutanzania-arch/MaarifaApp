@@ -23,9 +23,7 @@ import com.maarifa.app.ui.teacher.TeacherVerificationPendingScreen
 fun MaarifaNavGraph() {
     val navController = rememberNavController()
     val container = maarifaContainer()
-    
-    // AuthViewModel is intentionally created once here and threaded through every auth
-    // screen, so state like "OTP was just sent" survives navigating Login -> Otp -> back.
+
     val authViewModel: AuthViewModel = viewModel(
         factory = SimpleViewModelFactory { AuthViewModel(container.authRepository, container.authService) }
     )
@@ -34,12 +32,15 @@ fun MaarifaNavGraph() {
         composable(Routes.SPLASH) { SplashScreen(authViewModel, navController) }
         composable(Routes.WELCOME) { WelcomeScreen(navController) }
         composable(Routes.LOGIN) { LoginScreen(authViewModel, navController) }
-        
-        // Kurekebisha wito wa RegisterScreen hapa
+
         composable(Routes.REGISTER) {
             RegisterScreen(
-                authViewModel = authViewModel,
-                navController = navController
+                viewModel = authViewModel,
+                onRegistrationSuccess = {
+                    navController.navigate(Routes.STUDENT_HOME) {
+                        popUpTo(Routes.WELCOME) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -56,15 +57,17 @@ fun MaarifaNavGraph() {
                 navController.navigate(Routes.WELCOME) { popUpTo(0) }
             })
         }
+
         composable(Routes.TEACHER_HOME) {
             TeacherHomeScreen(onSignedOut = {
                 navController.navigate(Routes.WELCOME) { popUpTo(0) }
             })
         }
+
         composable(Routes.TEACHER_VERIFICATION_PENDING) {
             TeacherVerificationPendingScreen(onVerified = {
-                navController.navigate(Routes.TEACHER_HOME) { 
-                    popUpTo(Routes.TEACHER_VERIFICATION_PENDING) { inclusive = true } 
+                navController.navigate(Routes.TEACHER_HOME) {
+                    popUpTo(Routes.TEACHER_VERIFICATION_PENDING) { inclusive = true }
                 }
             })
         }
