@@ -1,11 +1,9 @@
 package com.maarifa.app.ui.auth
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,7 +12,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +30,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -99,6 +97,15 @@ fun RegisterScreen(
     val buttonGradient = Brush.horizontalGradient(
         colors = listOf(primaryGreen, lightGreen)
     )
+    val disabledButtonGradient = Brush.horizontalGradient(
+        colors = listOf(Color(0xFFA5D6A7), Color(0xFFC8E6C9))
+    )
+
+    val isFormValid = fullName.isNotBlank() &&
+            phoneNumber.isNotBlank() &&
+            email.isNotBlank() &&
+            selectedRegion.isNotBlank() &&
+            !state.isSubmitting
 
     LaunchedEffect(state.isSignedIn, state.profile, state.isSubmitting) {
         if (state.isSignedIn && state.profile != null && !state.isSubmitting) {
@@ -177,10 +184,11 @@ fun RegisterScreen(
 
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
+                            // Full Name Field
                             OutlinedTextField(
                                 value = fullName,
                                 onValueChange = { fullName = it },
-                                placeholder = { Text("Jina Buplem / Full Name", color = Color.LightGray) },
+                                placeholder = { Text("Jina Kamili / Full Name", color = Color.LightGray) },
                                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(14.dp),
@@ -193,6 +201,7 @@ fun RegisterScreen(
                                 )
                             )
 
+                            // Email Field
                             OutlinedTextField(
                                 value = email,
                                 onValueChange = { email = it },
@@ -210,6 +219,7 @@ fun RegisterScreen(
                                 )
                             )
 
+                            // Phone Number Field
                             OutlinedTextField(
                                 value = phoneNumber,
                                 onValueChange = { phoneNumber = it },
@@ -227,6 +237,7 @@ fun RegisterScreen(
                                 )
                             )
 
+                            // Region Dropdown
                             ExposedDropdownMenuBox(
                                 expanded = expandedRegionDropdown,
                                 onExpandedChange = { expandedRegionDropdown = !expandedRegionDropdown }
@@ -239,7 +250,7 @@ fun RegisterScreen(
                                     leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Gray) },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRegionDropdown) },
                                     modifier = Modifier
-                                        .menuAnchor()
+                                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                                         .fillMaxWidth(),
                                     shape = RoundedCornerShape(14.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -265,6 +276,7 @@ fun RegisterScreen(
                                 }
                             }
 
+                            // School Name Field
                             OutlinedTextField(
                                 value = schoolName,
                                 onValueChange = { schoolName = it },
@@ -281,6 +293,7 @@ fun RegisterScreen(
                                 )
                             )
 
+                            // Form Class Dropdown
                             ExposedDropdownMenuBox(
                                 expanded = expandedFormDropdown,
                                 onExpandedChange = { expandedFormDropdown = !expandedFormDropdown }
@@ -293,7 +306,7 @@ fun RegisterScreen(
                                     leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = Color.Gray) },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedFormDropdown) },
                                     modifier = Modifier
-                                        .menuAnchor()
+                                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                                         .fillMaxWidth(),
                                     shape = RoundedCornerShape(14.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -322,6 +335,7 @@ fun RegisterScreen(
 
                         Spacer(modifier = Modifier.height(20.dp))
 
+                        // Submit Button
                         Button(
                             onClick = {
                                 viewModel.completeRegistration(
@@ -336,16 +350,18 @@ fun RegisterScreen(
                                     formClass = selectedFormClass
                                 )
                             },
-                            enabled = fullName.isNotBlank() &&
-                                    phoneNumber.isNotBlank() &&
-                                    email.isNotBlank() &&
-                                    selectedRegion.isNotBlank() &&
-                                    !state.isSubmitting,
+                            enabled = isFormValid,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp)
-                                .background(buttonGradient, shape = RoundedCornerShape(16.dp)),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                .background(
+                                    brush = if (isFormValid) buttonGradient else disabledButtonGradient,
+                                    shape = RoundedCornerShape(16.dp)
+                                ),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent
+                            ),
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             if (state.isSubmitting) {
@@ -355,12 +371,16 @@ fun RegisterScreen(
                                     strokeWidth = 2.dp
                                 )
                             } else {
-                                Text("Maliza Usajili", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(
+                                    text = "Maliza Usajili",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
+                        // Error Message Display
                         state.errorMessage?.let { err ->
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
