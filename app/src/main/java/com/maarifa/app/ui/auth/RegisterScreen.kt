@@ -30,7 +30,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -250,7 +249,7 @@ fun RegisterScreen(
                                     leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Gray) },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRegionDropdown) },
                                     modifier = Modifier
-                                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                                        .menuAnchor()
                                         .fillMaxWidth(),
                                     shape = RoundedCornerShape(14.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -306,7 +305,7 @@ fun RegisterScreen(
                                     leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = Color.Gray) },
                                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedFormDropdown) },
                                     modifier = Modifier
-                                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                                        .menuAnchor()
                                         .fillMaxWidth(),
                                     shape = RoundedCornerShape(14.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
