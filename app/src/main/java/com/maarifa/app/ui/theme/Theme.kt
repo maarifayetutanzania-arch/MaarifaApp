@@ -63,7 +63,7 @@ fun MaarifaTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = MaarifaTypography,
         shapes = MaarifaShapes,
         content = content
     )
