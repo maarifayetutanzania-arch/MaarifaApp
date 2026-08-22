@@ -23,6 +23,7 @@ import com.maarifa.app.ui.teacher.TeacherVerificationPendingScreen
 fun MaarifaNavGraph() {
     val navController = rememberNavController()
     val container = maarifaContainer()
+    
     // AuthViewModel is intentionally created once here and threaded through every auth
     // screen, so state like "OTP was just sent" survives navigating Login -> Otp -> back.
     val authViewModel: AuthViewModel = viewModel(
@@ -33,7 +34,15 @@ fun MaarifaNavGraph() {
         composable(Routes.SPLASH) { SplashScreen(authViewModel, navController) }
         composable(Routes.WELCOME) { WelcomeScreen(navController) }
         composable(Routes.LOGIN) { LoginScreen(authViewModel, navController) }
-        composable(Routes.REGISTER) { RegisterScreen(authViewModel, navController) }
+        
+        // Kurekebisha wito wa RegisterScreen hapa
+        composable(Routes.REGISTER) {
+            RegisterScreen(
+                authViewModel = authViewModel,
+                navController = navController
+            )
+        }
+
         composable(
             Routes.OTP,
             arguments = listOf(navArgument("verificationId") { type = NavType.StringType })
@@ -54,7 +63,9 @@ fun MaarifaNavGraph() {
         }
         composable(Routes.TEACHER_VERIFICATION_PENDING) {
             TeacherVerificationPendingScreen(onVerified = {
-                navController.navigate(Routes.TEACHER_HOME) { popUpTo(Routes.TEACHER_VERIFICATION_PENDING) { inclusive = true } }
+                navController.navigate(Routes.TEACHER_HOME) { 
+                    popUpTo(Routes.TEACHER_VERIFICATION_PENDING) { inclusive = true } 
+                }
             })
         }
     }
