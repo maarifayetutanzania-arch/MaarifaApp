@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AdminAuthProvider } from "./lib/AdminAuthContext";
 import { AdminLayout } from "./components/AdminLayout";
-import { LoginPage } from "./pages/LoginPage";
-import { DashboardHome } from "./pages/DashboardHome";
-import { TeachersPage } from "./pages/TeachersPage";
-import { ContentPage } from "./pages/ContentPage";
-import { SubscriptionsPage } from "./pages/SubscriptionsPage";
-import { PayoutsPage } from "./pages/PayoutsPage";
+import LoginPage from "./pages/LoginPage";
+import DashboardHome from "./pages/DashboardHome";
+import TeachersPage from "./pages/TeachersPage";
+import ContentPage from "./pages/ContentPage";
+import SubscriptionsPage from "./pages/SubscriptionsPage";
+import PayoutsPage from "./pages/PayoutsPage";
 
 export default function App() {
   return (
