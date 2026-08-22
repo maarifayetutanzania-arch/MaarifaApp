@@ -159,7 +159,7 @@ class AuthViewModel(
     }
 
     fun completeRegistration(
-        uid: String,
+        uidParam: String?,
         fullName: String,
         phoneNumber: String,
         email: String,
@@ -170,10 +170,27 @@ class AuthViewModel(
         formClass: String
     ) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
-        val result = authRepository.createUserProfile(uid, fullName, phoneNumber, email, provider, role, region, schoolName, formClass)
+
+        // Tutaangalia kwanza kama tumepata UID kutoka kwenye parameter, au tutachukua active UID kutoka Firebase
+        val activeUid = uidParam.takeIf { !it.isNullOrBlank() } ?: authRepository.currentUserId
+
+        if (activeUid.isNullOrBlank()) {
+            _state.value = _state.value.copy(
+                isSubmitting = false,
+                errorMessage = "Authentication failed: User ID not found."
+            )
+            return@launch
+        }
+
+        val result = authRepository.createUserProfile(
+            activeUid, fullName, phoneNumber, email, provider, role, region, schoolName, formClass
+        )
         when (result) {
-            is Resource.Success -> loadProfileAfterAuth(uid)
-            is Resource.Error -> _state.value = _state.value.copy(isSubmitting = false, errorMessage = result.message)
+            is Resource.Success -> loadProfileAfterAuth(activeUid)
+            is Resource.Error -> _state.value = _state.value.copy(
+                isSubmitting = false, 
+                errorMessage = result.message
+            )
             Resource.Loading -> Unit
         }
     }
