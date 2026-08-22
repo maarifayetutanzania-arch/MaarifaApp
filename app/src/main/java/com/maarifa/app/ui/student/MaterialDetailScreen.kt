@@ -127,7 +127,7 @@ fun MaterialDetailScreen(materialId: String, onOpenReader: (String) -> Unit, onN
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape)
+                                        .clip(RoundedCornerShape(8.dp))
                                         .background(lightGreenBg)
                                         .padding(horizontal = 10.dp, vertical = 4.dp)
                                 ) {
@@ -141,7 +141,7 @@ fun MaterialDetailScreen(materialId: String, onOpenReader: (String) -> Unit, onN
 
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape)
+                                        .clip(RoundedCornerShape(8.dp))
                                         .background(Color(0xFFF0F0F0))
                                         .padding(horizontal = 10.dp, vertical = 4.dp)
                                 ) {
