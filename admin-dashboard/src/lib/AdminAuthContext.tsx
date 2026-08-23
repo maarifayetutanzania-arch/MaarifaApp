@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut as fbSignOut, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { auth, db } from "./firebase";
 import { AppUser } from "../types";
 
 interface AdminAuthState {
@@ -33,11 +33,19 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         return;
       }
-      const snap = await getDoc(doc(db, "users", user.uid));
-      const data = snap.exists() ? (snap.data() as AppUser) : null;
-      setAdminProfile(data);
-      setLoading(false);
+
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        const data = snap.exists() ? (snap.data() as AppUser) : null;
+        setAdminProfile(data);
+      } catch (err) {
+        console.error("Error fetching admin profile:", err);
+        setAdminProfile(null);
+      } finally {
+        setLoading(false);
+      }
     });
+
     return unsubscribe;
   }, []);
 
@@ -45,20 +53,38 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Sign-in failed");
+    } catch (e: any) {
+      let customMessage = "Kuingia imeshindikana. Angalia taarifa zako.";
+      if (e.code === "auth/invalid-credential" || e.code === "auth/user-not-found" || e.code === "auth/wrong-password") {
+        customMessage = "Barua pepe au nenosiri si sahihi.";
+      } else if (e.code === "auth/too-many-requests") {
+        customMessage = "Akaunti imefungiwa kwa muda kutokana na kujaribu mara nyingi. Jaribu tena baadae.";
+      }
+      
+      setError(customMessage);
       throw e;
     }
   };
 
   const signOut = async () => {
     await fbSignOut(auth);
+    setAdminProfile(null);
   };
 
   const isAdmin = adminProfile?.role === "ADMIN";
 
   return (
-    <AdminAuthContext.Provider value={{ loading, firebaseUser, adminProfile, isAdmin, signIn, signOut, error }}>
+    <AdminAuthContext.Provider
+      value={{
+        loading,
+        firebaseUser,
+        adminProfile,
+        isAdmin,
+        signIn,
+        signOut,
+        error
+      }}
+    >
       {children}
     </AdminAuthContext.Provider>
   );
