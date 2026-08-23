@@ -7,19 +7,30 @@ export function useCollection<T>(query: Query | null): { data: T[]; loading: boo
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!query) return;
+    if (!query) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     const unsubscribe = onSnapshot(
       query,
       (snap) => {
-        setData(snap.docs.map((d) => ({ ...(d.data() as T) })));
+        const docsData = snap.docs.map((d) => ({
+          id: d.id, // Inaweka Firestore Document ID kwenye object
+          ...(d.data() as T)
+        }));
+        setData(docsData);
         setLoading(false);
+        setError(null);
       },
       (err) => {
+        console.error("Firestore useCollection Error:", err);
         setError(err.message);
         setLoading(false);
       }
     );
+
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
