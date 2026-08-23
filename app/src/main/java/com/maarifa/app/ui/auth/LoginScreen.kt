@@ -50,7 +50,6 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -76,6 +75,7 @@ import androidx.navigation.NavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.maarifa.app.R
+import com.maarifa.app.data.model.UserRole
 import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.navigation.Routes
 
@@ -94,12 +94,13 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
     var tab by remember { mutableStateOf(LoginTab.EMAIL) }
     val context = LocalContext.current
 
-    // Navigation and Session Logic preserved
+    // Navigation and Session Logic
     LaunchedEffect(state.isSignedIn, state.profile, state.isSubmitting) {
         if (state.isSignedIn && !state.isSubmitting) {
             val dest = if (state.profile == null) {
+                // Kama hana profile, mpeleke kwenye usajili na upitishe UID yake
                 Routes.REGISTER
-            } else if (state.profile!!.roleEnum == com.maarifa.app.data.model.UserRole.TEACHER) {
+            } else if (state.profile!!.roleEnum == UserRole.TEACHER) {
                 Routes.TEACHER_HOME
             } else {
                 Routes.STUDENT_HOME
@@ -159,7 +160,6 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
             ) {
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Premium Card Layout
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
@@ -172,7 +172,6 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                             .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // User Avatar Header Icon
                         Box(
                             modifier = Modifier
                                 .size(70.dp)
@@ -195,7 +194,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "Login",
+                            text = "Ingia (Login)",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1B5E20)
@@ -203,7 +202,6 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Custom Rounded Sub-Tabs for Email / Phone
                         TabRow(
                             selectedTabIndex = tab.ordinal,
                             containerColor = Color(0xFFF1F8E9),
@@ -235,7 +233,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                                 onClick = { tab = LoginTab.PHONE },
                                 text = {
                                     Text(
-                                        "Phone",
+                                        "Simu",
                                         fontWeight = if (tab == LoginTab.PHONE) FontWeight.Bold else FontWeight.Normal,
                                         color = if (tab == LoginTab.PHONE) primaryGreen else Color.Gray
                                     )
@@ -252,14 +250,13 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        // Or Continue With Divider
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
                             Text(
-                                text = "  or continue with  ",
+                                text = "  au ingia kwa  ",
                                 fontSize = 12.sp,
                                 color = Color.Gray
                             )
@@ -268,7 +265,6 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Google Only Button (NO FACEBOOK)
                         Box(
                             modifier = Modifier
                                 .size(54.dp)
@@ -297,29 +293,27 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        // Footer Link
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = "Not registered yet?",
+                                text = "Huna akaunti bado?",
                                 fontSize = 13.sp,
                                 color = Color.Gray
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Sign Up >",
+                                text = "Tengeneza Akaunti >",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = primaryGreen,
                                 modifier = Modifier.clickable {
-                                    navController.navigate(Routes.REGISTER)
+                                    navController.navigate(Routes.SIGN_UP)
                                 }
                             )
                         }
 
-                        // Error Message
                         state.errorMessage?.let { err ->
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
@@ -356,12 +350,12 @@ private fun EmailLoginForm(
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Column {
-            Text("Email", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
+            Text("Barua Pepe", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                placeholder = { Text("Enter your email", color = Color.LightGray) },
+                placeholder = { Text("Ingiza email yako", color = Color.LightGray) },
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = Color.Gray) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
@@ -381,9 +375,9 @@ private fun EmailLoginForm(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Password", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
+                Text("Neno la Siri", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
                 Text(
-                    "Forgot password?",
+                    "Umesahau?",
                     fontSize = 11.sp,
                     color = primaryGreen,
                     fontWeight = FontWeight.Bold,
@@ -394,7 +388,7 @@ private fun EmailLoginForm(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                placeholder = { Text("Enter your password", color = Color.LightGray) },
+                placeholder = { Text("Ingiza neno la siri", color = Color.LightGray) },
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Color.Gray) },
                 trailingIcon = {
                     val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
@@ -418,7 +412,6 @@ private fun EmailLoginForm(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Curved Gradient Button
         Button(
             onClick = { authViewModel.signInWithEmail(email.trim(), password) },
             enabled = email.isNotBlank() && password.isNotBlank(),
@@ -429,7 +422,7 @@ private fun EmailLoginForm(
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text("Log In", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Ingia", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }
@@ -444,7 +437,7 @@ private fun PhoneLoginForm(
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Column {
-            Text("Phone Number", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
+            Text("Namba ya Simu", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(4.dp))
             OutlinedTextField(
                 value = phone,
@@ -479,7 +472,7 @@ private fun PhoneLoginForm(
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text("Send Verification Code", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Tuma Namba ya Uhakiki", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }
