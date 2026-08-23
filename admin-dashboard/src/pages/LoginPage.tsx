@@ -97,3 +97,6 @@ export function LoginPage() {
     </div>
   );
 }
+
+// Export default ili iendane na import yoyote ndani ya App.tsx
+export default LoginPage;
