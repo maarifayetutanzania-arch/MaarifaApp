@@ -1,22 +1,32 @@
 import { httpsCallable } from "firebase/functions";
-import { functions } from "../firebase";
+import { functions } from "./firebase";
 
 /**
- * Every one of these just calls the matching Cloud Function in
- * functions/src/adminActions.ts, which re-verifies role === "ADMIN" server-side
- * before writing anything. This file never touches Firestore directly for writes —
- * firestore.rules blocks that outright for teachers/subscriptions/payouts.
+ * All admin actions call server-side Cloud Functions in `functions/src/adminActions.ts`.
+ * The backend re-verifies `role === "ADMIN"` before committing any state changes to Firestore.
  */
 export const adminApi = {
-  approveTeacher: (teacherId: string) => httpsCallable(functions, "adminApproveTeacher")({ teacherId }),
-  rejectTeacher: (teacherId: string, notes: string) => httpsCallable(functions, "adminRejectTeacher")({ teacherId, notes }),
+  // --- TEACHERS MANAGEMENT ---
+  approveTeacher: (teacherId: string) =>
+    httpsCallable<{ teacherId: string }, { success: boolean }>(functions, "adminApproveTeacher")({ teacherId }),
 
-  approveMaterial: (materialId: string) => httpsCallable(functions, "adminApproveMaterial")({ materialId }),
-  rejectMaterial: (materialId: string, reason: string) => httpsCallable(functions, "adminRejectMaterial")({ materialId, reason }),
+  rejectTeacher: (teacherId: string, notes: string) =>
+    httpsCallable<{ teacherId: string; notes: string }, { success: boolean }>(functions, "adminRejectTeacher")({ teacherId, notes }),
 
-  approvePayout: (payoutId: string) => httpsCallable(functions, "adminApprovePayout")({ payoutId }),
+  // --- CONTENT & MATERIALS MANAGEMENT ---
+  approveMaterial: (materialId: string) =>
+    httpsCallable<{ materialId: string }, { success: boolean }>(functions, "adminApproveMaterial")({ materialId }),
+
+  rejectMaterial: (materialId: string, reason: string) =>
+    httpsCallable<{ materialId: string; reason: string }, { success: boolean }>(functions, "adminRejectMaterial")({ materialId, reason }),
+
+  // --- PAYOUTS & TRANSACTIONS MANAGEMENT ---
+  approvePayout: (payoutId: string) =>
+    httpsCallable<{ payoutId: string }, { success: boolean }>(functions, "adminApprovePayout")({ payoutId }),
+
   markPayoutPaid: (payoutId: string, transactionId: string) =>
-    httpsCallable(functions, "adminMarkPayoutPaid")({ payoutId, transactionId }),
+    httpsCallable<{ payoutId: string; transactionId: string }, { success: boolean }>(functions, "adminMarkPayoutPaid")({ payoutId, transactionId }),
+
   flagPayoutException: (payoutId: string, notes: string) =>
-    httpsCallable(functions, "adminFlagPayoutException")({ payoutId, notes }),
+    httpsCallable<{ payoutId: string; notes: string }, { success: boolean }>(functions, "adminFlagPayoutException")({ payoutId, notes }),
 };
