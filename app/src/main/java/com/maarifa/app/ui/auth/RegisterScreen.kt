@@ -63,6 +63,7 @@ import com.maarifa.app.data.model.UserRole
 fun RegisterScreen(
     viewModel: AuthViewModel,
     onRegistrationSuccess: () -> Unit,
+    passedUid: String? = null,
     initialEmail: String = "",
     initialPhoneNumber: String = "",
     provider: AuthProvider = AuthProvider.EMAIL
@@ -337,8 +338,10 @@ fun RegisterScreen(
                         // Submit Button
                         Button(
                             onClick = {
+                                // Tunatumia UID iliyopitishwa au tuliyonayo kwenye Firebase Auth
+                                val activeUid = passedUid ?: state.currentUser?.uid
                                 viewModel.completeRegistration(
-                                    uidParam = null,
+                                    uidParam = activeUid,
                                     fullName = fullName.trim(),
                                     phoneNumber = phoneNumber.trim(),
                                     email = email.trim(),
