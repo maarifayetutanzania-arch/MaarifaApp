@@ -1,5 +1,5 @@
 import { httpsCallable } from "firebase/functions";
-import { functions } from "./firebase";
+import { functions } from "../firebase";
 
 /**
  * All admin actions call server-side Cloud Functions in `functions/src/adminActions.ts`.
