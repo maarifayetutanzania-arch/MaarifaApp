@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AdminAuthProvider, useAdminAuth } from "./lib/AdminAuthContext";
 import { AdminLayout } from "./components/AdminLayout";
-import LoginPage from "./pages/LoginPage";
-import DashboardHome from "./pages/DashboardHome";
-import TeachersPage from "./pages/TeachersPage";
-import ContentPage from "./pages/ContentPage";
-import SubscriptionsPage from "./pages/SubscriptionsPage";
-import PayoutsPage from "./pages/PayoutsPage";
+import { LoginPage } from "./pages/LoginPage";
+import { DashboardHome } from "./pages/DashboardHome";
+import { TeachersPage } from "./pages/TeachersPage";
+import { ContentPage } from "./pages/ContentPage";
+import { SubscriptionsPage } from "./pages/SubscriptionsPage";
+import { PayoutsPage } from "./pages/PayoutsPage";
 
 // Kizuizi cha kuhakikisha Admin tu ndiye anayeingia (Protected Route)
 function ProtectedRoute() {
