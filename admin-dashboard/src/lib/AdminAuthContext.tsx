@@ -37,7 +37,15 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       try {
         const snap = await getDoc(doc(db, "users", user.uid));
         const data = snap.exists() ? (snap.data() as AppUser) : null;
-        setAdminProfile(data);
+
+        // Uthibitisho wa ziada: Hakikisha mtumiaji ni ADMIN
+        if (data && data.role === "ADMIN") {
+          setAdminProfile(data);
+        } else {
+          setAdminProfile(null);
+          setError("Huna mamlaka ya kufikia Admin Dashboard.");
+          await fbSignOut(auth);
+        }
       } catch (err) {
         console.error("Error fetching admin profile:", err);
         setAdminProfile(null);
