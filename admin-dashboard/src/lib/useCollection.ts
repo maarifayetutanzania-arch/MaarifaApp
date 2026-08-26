@@ -8,6 +8,7 @@ export function useCollection<T>(query: Query | null): { data: T[]; loading: boo
 
   useEffect(() => {
     if (!query) {
+      setData([]);
       setLoading(false);
       return;
     }
@@ -17,7 +18,7 @@ export function useCollection<T>(query: Query | null): { data: T[]; loading: boo
       query,
       (snap) => {
         const docsData = snap.docs.map((d) => ({
-          id: d.id, // Inaweka Firestore Document ID kwenye object
+          id: d.id,
           ...(d.data() as T)
         }));
         setData(docsData);
@@ -31,8 +32,7 @@ export function useCollection<T>(query: Query | null): { data: T[]; loading: boo
       }
     );
 
-    return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => unsubscribe();
   }, [query]);
 
   return { data, loading, error };
