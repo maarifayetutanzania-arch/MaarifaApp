@@ -1,18 +1,17 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { collection, orderBy, query } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { db } from "../firebase";
 import { useCollection } from "../lib/useCollection";
 import { StatusPill, EmptyState } from "../components/Common";
 import { Teacher } from "../types";
 import { adminApi } from "../lib/adminApi";
 
-// Query imewekwa nje ya component kuzuia re-creation kwenye kila render
-const teachersQuery = query(
-  collection(db, "teachers"),
-  orderBy("verificationStatus")
-);
-
 export function TeachersPage() {
+  // Query imewekwa ndani ya useMemo kuzuia re-creation zisizo za lazima
+  const teachersQuery = useMemo(() => {
+    return query(collection(db, "teachers"), orderBy("verificationStatus"));
+  }, []);
+
   const { data: teachers, loading } = useCollection<Teacher>(teachersQuery);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -83,82 +82,85 @@ export function TeachersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 text-sm text-gray-700">
-                {sorted.map((t) => (
-                  <Fragment key={t.teacherId}>
-                    <tr className="hover:bg-gray-50/80 transition-colors">
-                      <td className="px-6 py-4 font-medium text-gray-900">
-                        <div>{t.fullName || t.teacherId}</div>
-                        {t.email && (
-                          <div className="text-xs text-gray-400 font-normal">{t.email}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusPill status={t.verificationStatus} />
-                      </td>
-                      <td className="px-6 py-4">{t.totalUploads || 0}</td>
-                      <td className="px-6 py-4">
-                        {t.engagementScore ? t.engagementScore.toFixed(1) : "0.0"}
-                      </td>
-                      <td className="px-6 py-4 font-mono font-semibold text-gray-900">
-                        {(t.earningsBalanceTzs || 0).toLocaleString()} TZS
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        {t.verificationStatus === "PENDING" && (
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-xs transition disabled:opacity-50"
-                              disabled={busyId === t.teacherId}
-                              onClick={() => approve(t.teacherId)}
-                            >
-                              {busyId === t.teacherId ? "Inasindika..." : "Thibitisha"}
-                            </button>
-                            <button
-                              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg font-medium text-xs transition disabled:opacity-50"
-                              disabled={busyId === t.teacherId}
-                              onClick={() => setRejectingId(t.teacherId)}
-                            >
-                              Kataa
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-
-                    {/* Rejection Form Dropdown */}
-                    {rejectingId === t.teacherId && (
-                      <tr className="bg-rose-50/50">
-                        <td colSpan={6} className="px-6 py-4">
-                          <div className="flex flex-col sm:flex-row items-center gap-3">
-                            <input
-                              className="flex-1 w-full px-4 py-2 rounded-xl border border-rose-200 text-sm outline-none focus:ring-2 focus:ring-rose-500 bg-white"
-                              placeholder="Andika sababu ya kukataa (itaonekana kwa mwalimu)..."
-                              value={rejectNotes}
-                              onChange={(e) => setRejectNotes(e.target.value)}
-                            />
-                            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                {sorted.map((t) => {
+                  const targetId = t.id || t.teacherId;
+                  return (
+                    <Fragment key={targetId}>
+                      <tr className="hover:bg-gray-50/80 transition-colors">
+                        <td className="px-6 py-4 font-medium text-gray-900">
+                          <div>{t.fullName || targetId}</div>
+                          {t.email && (
+                            <div className="text-xs text-gray-400 font-normal">{t.email}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <StatusPill status={t.verificationStatus} />
+                        </td>
+                        <td className="px-6 py-4">{t.totalUploads || 0}</td>
+                        <td className="px-6 py-4">
+                          {t.engagementScore ? t.engagementScore.toFixed(1) : "0.0"}
+                        </td>
+                        <td className="px-6 py-4 font-mono font-semibold text-gray-900">
+                          {(t.earningsBalanceTzs || 0).toLocaleString()} TZS
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {t.verificationStatus === "PENDING" && (
+                            <div className="flex items-center justify-end gap-2">
                               <button
-                                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition disabled:opacity-50"
-                                disabled={busyId === t.teacherId}
-                                onClick={() => submitReject(t.teacherId)}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-xs transition disabled:opacity-50"
+                                disabled={busyId === targetId}
+                                onClick={() => approve(targetId)}
                               >
-                                Thibitisha Kukataa
+                                {busyId === targetId ? "Inasindika..." : "Thibitisha"}
                               </button>
                               <button
-                                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl text-xs font-semibold transition"
-                                onClick={() => {
-                                  setRejectingId(null);
-                                  setRejectNotes("");
-                                }}
+                                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg font-medium text-xs transition disabled:opacity-50"
+                                disabled={busyId === targetId}
+                                onClick={() => setRejectingId(targetId)}
                               >
-                                Ghairi
+                                Kataa
                               </button>
                             </div>
-                          </div>
+                          )}
                         </td>
                       </tr>
-                    )}
-                  </Fragment>
-                ))}
+
+                      {/* Rejection Form Dropdown */}
+                      {rejectingId === targetId && (
+                        <tr className="bg-rose-50/50">
+                          <td colSpan={6} className="px-6 py-4">
+                            <div className="flex flex-col sm:flex-row items-center gap-3">
+                              <input
+                                className="flex-1 w-full px-4 py-2 rounded-xl border border-rose-200 text-sm outline-none focus:ring-2 focus:ring-rose-500 bg-white"
+                                placeholder="Andika sababu ya kukataa (itaonekana kwa mwalimu)..."
+                                value={rejectNotes}
+                                onChange={(e) => setRejectNotes(e.target.value)}
+                              />
+                              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                <button
+                                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition disabled:opacity-50"
+                                  disabled={busyId === targetId}
+                                  onClick={() => submitReject(targetId)}
+                                >
+                                  Thibitisha Kukataa
+                                </button>
+                                <button
+                                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl text-xs font-semibold transition"
+                                  onClick={() => {
+                                    setRejectingId(null);
+                                    setRejectNotes("");
+                                  }}
+                                >
+                                  Ghairi
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
