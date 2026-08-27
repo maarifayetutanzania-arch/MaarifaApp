@@ -98,7 +98,6 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
     LaunchedEffect(state.isSignedIn, state.profile, state.isSubmitting) {
         if (state.isSignedIn && !state.isSubmitting) {
             val dest = if (state.profile == null) {
-                // Kama hana profile, mpeleke kwenye usajili na upitishe UID yake
                 Routes.REGISTER
             } else if (state.profile!!.roleEnum == UserRole.TEACHER) {
                 Routes.TEACHER_HOME
@@ -309,7 +308,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                                 fontWeight = FontWeight.Bold,
                                 color = primaryGreen,
                                 modifier = Modifier.clickable {
-                                    navController.navigate(Routes.SIGN_UP)
+                                    navController.navigate(Routes.REGISTER)
                                 }
                             )
                         }
