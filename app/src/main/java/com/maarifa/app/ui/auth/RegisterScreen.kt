@@ -55,6 +55,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
 import com.maarifa.app.data.model.AuthProvider
 import com.maarifa.app.data.model.UserRole
 
@@ -338,8 +339,7 @@ fun RegisterScreen(
                         // Submit Button
                         Button(
                             onClick = {
-                                // Tunatumia UID iliyopitishwa au tuliyonayo kwenye Firebase Auth
-                                val activeUid = passedUid ?: state.currentUser?.uid
+                                val activeUid = passedUid ?: FirebaseAuth.getInstance().currentUser?.uid
                                 viewModel.completeRegistration(
                                     uidParam = activeUid,
                                     fullName = fullName.trim(),
