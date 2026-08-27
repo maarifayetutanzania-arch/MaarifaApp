@@ -32,8 +32,15 @@ fun MaarifaNavGraph() {
         composable(Routes.SPLASH) { SplashScreen(authViewModel, navController) }
         composable(Routes.WELCOME) { WelcomeScreen(navController) }
         
-        // Imetumia LoginScreen(authViewModel, navController) inayokubalika na LoginScreen.kt
-        composable(Routes.LOGIN) { LoginScreen(authViewModel, navController) }
+        // MAREKEBISHO HAPA: Pitisha onNavigateToSignUp badala ya navController
+        composable(Routes.LOGIN) { 
+            LoginScreen(
+                authViewModel = authViewModel,
+                onNavigateToSignUp = {
+                    navController.navigate(Routes.REGISTER)
+                }
+            ) 
+        }
 
         composable(Routes.REGISTER) {
             RegisterScreen(
