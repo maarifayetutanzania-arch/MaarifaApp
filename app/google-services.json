@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "106555594589-llcvq6epkm5t6u58fpbp1uuaipbjv4ja.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.maarifa.app",
+            "certificate_hash": "c9bab92d613eb18ff54baf2f5711d7177e022eb7"
+          }
+        },
+        {
           "client_id": "106555594589-bmjoso6ekrg2n04ge3cbb8hbcblmv3kf.apps.googleusercontent.com",
           "client_type": 3
         }
