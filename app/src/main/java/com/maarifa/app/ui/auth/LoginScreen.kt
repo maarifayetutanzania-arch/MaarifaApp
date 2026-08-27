@@ -308,6 +308,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                                 fontWeight = FontWeight.Bold,
                                 color = primaryGreen,
                                 modifier = Modifier.clickable {
+                                    // Imetumika Routes.REGISTER kutoka kwenye Routes.kt yako
                                     navController.navigate(Routes.REGISTER)
                                 }
                             )
