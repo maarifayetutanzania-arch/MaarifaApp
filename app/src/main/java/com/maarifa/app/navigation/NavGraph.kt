@@ -32,6 +32,7 @@ fun MaarifaNavGraph() {
         composable(Routes.SPLASH) { SplashScreen(authViewModel, navController) }
         composable(Routes.WELCOME) { WelcomeScreen(navController) }
         
+        // Imetumia LoginScreen(authViewModel, navController) inayokubalika na LoginScreen.kt
         composable(Routes.LOGIN) { LoginScreen(authViewModel, navController) }
 
         composable(Routes.REGISTER) {
