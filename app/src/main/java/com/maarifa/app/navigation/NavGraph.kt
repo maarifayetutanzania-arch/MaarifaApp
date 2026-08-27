@@ -31,7 +31,16 @@ fun MaarifaNavGraph() {
     NavHost(navController = navController, startDestination = Routes.SPLASH) {
         composable(Routes.SPLASH) { SplashScreen(authViewModel, navController) }
         composable(Routes.WELCOME) { WelcomeScreen(navController) }
-        composable(Routes.LOGIN) { LoginScreen(authViewModel, navController) }
+        
+        // REKEBISHO HAPA (Line 33): Pitisha lambda badala ya navController pekee
+        composable(Routes.LOGIN) { 
+            LoginScreen(
+                viewModel = authViewModel,
+                onNavigateToSignUp = { 
+                    navController.navigate(Routes.REGISTER) 
+                }
+            ) 
+        }
 
         composable(Routes.REGISTER) {
             RegisterScreen(
