@@ -1,78 +1,70 @@
 package com.maarifa.app.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavType
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import com.maarifa.app.di.SimpleViewModelFactory
-import com.maarifa.app.di.maarifaContainer
-import com.maarifa.app.ui.auth.AuthViewModel
-import com.maarifa.app.ui.auth.LoginScreen
-import com.maarifa.app.ui.auth.OtpVerificationScreen
-import com.maarifa.app.ui.auth.RegisterScreen
-import com.maarifa.app.ui.auth.SplashScreen
-import com.maarifa.app.ui.auth.WelcomeScreen
-import com.maarifa.app.ui.student.StudentHomeScreen
-import com.maarifa.app.ui.teacher.TeacherHomeScreen
-import com.maarifa.app.ui.teacher.TeacherVerificationPendingScreen
+
+// Hakikisha ume-import Screens zako kwa usahihi hapa chini:
+// import com.maarifa.app.ui.screens.LoginScreen
+// import com.maarifa.app.ui.screens.SignUpScreen
+// import com.maarifa.app.ui.screens.HomeScreen
+
+object Routes {
+    const val LOGIN = "login"
+    const val SIGN_UP = "signup"
+    const val HOME = "home"
+}
 
 @Composable
-fun MaarifaNavGraph() {
-    val navController = rememberNavController()
-    val container = maarifaContainer()
-
-    val authViewModel: AuthViewModel = viewModel(
-        factory = SimpleViewModelFactory { AuthViewModel(container.authRepository, container.authService) }
-    )
-
-    NavHost(navController = navController, startDestination = Routes.SPLASH) {
-        composable(Routes.SPLASH) { SplashScreen(authViewModel, navController) }
-        composable(Routes.WELCOME) { WelcomeScreen(navController) }
-        
-        composable(Routes.LOGIN) { 
-            LoginScreen(authViewModel, navController) 
-        }
-
-        composable(Routes.REGISTER) {
-            RegisterScreen(
-                viewModel = authViewModel,
-                onRegistrationSuccess = {
-                    navController.navigate(Routes.STUDENT_HOME) {
-                        popUpTo(Routes.WELCOME) { inclusive = true }
+Composable NavGraph(
+    navController: NavHostController = rememberNavController(),
+    startDestination: String = Routes.LOGIN
+) {
+    NavHost(
+        navController = navController,
+        startDestination = startDestination
+    ) {
+        // 1. Login Screen Route
+        composable(Routes.LOGIN) {
+            // Badala ya kupitisha 'navController' moja kwa moja,
+            // tunapitisha Lambda callbacks () -> Unit
+            LoginScreen(
+                onNavigateToHome = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
                     }
+                },
+                onNavigateToSignUp = {
+                    navController.navigate(Routes.SIGN_UP)
                 }
             )
         }
 
-        composable(
-            Routes.OTP,
-            arguments = listOf(navArgument("verificationId") { type = NavType.StringType })
-        ) { entry ->
-            val verificationId = entry.arguments?.getString("verificationId").orEmpty()
-            OtpVerificationScreen(authViewModel, verificationId)
-        }
-
-        composable(Routes.STUDENT_HOME) {
-            StudentHomeScreen(onSignedOut = {
-                navController.navigate(Routes.WELCOME) { popUpTo(0) }
-            })
-        }
-
-        composable(Routes.TEACHER_HOME) {
-            TeacherHomeScreen(onSignedOut = {
-                navController.navigate(Routes.WELCOME) { popUpTo(0) }
-            })
-        }
-
-        composable(Routes.TEACHER_VERIFICATION_PENDING) {
-            TeacherVerificationPendingScreen(onVerified = {
-                navController.navigate(Routes.TEACHER_HOME) {
-                    popUpTo(Routes.TEACHER_VERIFICATION_PENDING) { inclusive = true }
+        // 2. Sign Up Screen Route
+        composable(Routes.SIGN_UP) {
+            SignUpScreen(
+                onNavigateToHome = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.popBackStack()
                 }
-            })
+            )
+        }
+
+        // 3. Home Screen Route
+        composable(Routes.HOME) {
+            HomeScreen(
+                onLogout = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.HOME) { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }
