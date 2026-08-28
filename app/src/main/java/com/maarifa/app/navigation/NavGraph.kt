@@ -1,14 +1,16 @@
 package com.maarifa.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
-// Import UI Screens na ViewModel
+import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.ui.auth.AuthViewModel
+import com.maarifa.app.ui.auth.AuthViewModelFactory
 import com.maarifa.app.ui.auth.LoginScreen
 import com.maarifa.app.ui.auth.RegisterScreen
 import com.maarifa.app.ui.auth.SplashScreen
@@ -16,9 +18,16 @@ import com.maarifa.app.ui.auth.SplashScreen
 @Composable
 fun MaarifaNavGraph(
     navController: NavHostController = rememberNavController(),
-    startDestination: String = Routes.SPLASH,
-    authViewModel: AuthViewModel = viewModel()
+    startDestination: String = Routes.SPLASH
 ) {
+    val container = maarifaContainer()
+    val authViewModel: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory(
+            authRepository = container.authRepository,
+            authService = container.authService
+        )
+    )
+
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -32,8 +41,8 @@ fun MaarifaNavGraph(
 
         composable(Routes.LOGIN) {
             LoginScreen(
-                navController = navController,
-                authViewModel = authViewModel
+                authViewModel = authViewModel,
+                navController = navController
             )
         }
 
@@ -41,8 +50,7 @@ fun MaarifaNavGraph(
             RegisterScreen(
                 viewModel = authViewModel,
                 onRegistrationSuccess = {
-                    // Baada ya kujisajili kwa mafanikio, mpeleke mteja kwenye Login au Home Screen
-                    navController.navigate(Routes.LOGIN) {
+                    navController.navigate(Routes.STUDENT_HOME) {
                         popUpTo(Routes.REGISTER) { inclusive = true }
                     }
                 }
