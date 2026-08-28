@@ -108,6 +108,7 @@ fun RegisterScreen(
             selectedRegion.isNotBlank() &&
             !state.isSubmitting
 
+    // Baada ya kusajili vizuri, piga onRegistrationSuccess
     LaunchedEffect(state.isSignedIn, state.profile, state.isSubmitting) {
         if (state.isSignedIn && state.profile != null && !state.isSubmitting) {
             onRegistrationSuccess()
@@ -147,6 +148,7 @@ fun RegisterScreen(
                             .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // Avatar
                         Box(
                             modifier = Modifier
                                 .size(70.dp)
@@ -185,12 +187,14 @@ fun RegisterScreen(
 
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-                            // Full Name Field
+                            // Full Name
                             OutlinedTextField(
                                 value = fullName,
                                 onValueChange = { fullName = it },
                                 placeholder = { Text("Jina Kamili / Full Name", color = Color.LightGray) },
-                                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray)
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(14.dp),
                                 singleLine = true,
@@ -202,12 +206,14 @@ fun RegisterScreen(
                                 )
                             )
 
-                            // Email Field
+                            // Email
                             OutlinedTextField(
                                 value = email,
                                 onValueChange = { email = it },
                                 placeholder = { Text("Barua Pepe / Email", color = Color.LightGray) },
-                                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = Color.Gray) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Email, contentDescription = null, tint = Color.Gray)
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(14.dp),
                                 singleLine = true,
@@ -220,12 +226,14 @@ fun RegisterScreen(
                                 )
                             )
 
-                            // Phone Number Field
+                            // Phone
                             OutlinedTextField(
                                 value = phoneNumber,
                                 onValueChange = { phoneNumber = it },
                                 placeholder = { Text("Namba ya Simu / Phone Number", color = Color.LightGray) },
-                                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = Color.Gray) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Phone, contentDescription = null, tint = Color.Gray)
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(14.dp),
                                 singleLine = true,
@@ -248,8 +256,12 @@ fun RegisterScreen(
                                     onValueChange = {},
                                     readOnly = true,
                                     placeholder = { Text("Chagua Mkoa / Region", color = Color.LightGray) },
-                                    leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Gray) },
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRegionDropdown) },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Gray)
+                                    },
+                                    trailingIcon = {
+                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRegionDropdown)
+                                    },
                                     modifier = Modifier
                                         .menuAnchor()
                                         .fillMaxWidth(),
@@ -277,12 +289,14 @@ fun RegisterScreen(
                                 }
                             }
 
-                            // School Name Field
+                            // School Name
                             OutlinedTextField(
                                 value = schoolName,
                                 onValueChange = { schoolName = it },
                                 placeholder = { Text("Shule / School Name (Optional)", color = Color.LightGray) },
-                                leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = Color.Gray) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.School, contentDescription = null, tint = Color.Gray)
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(14.dp),
                                 singleLine = true,
@@ -304,8 +318,12 @@ fun RegisterScreen(
                                     onValueChange = {},
                                     readOnly = true,
                                     placeholder = { Text("Darasa / Form Class", color = Color.LightGray) },
-                                    leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = Color.Gray) },
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedFormDropdown) },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.School, contentDescription = null, tint = Color.Gray)
+                                    },
+                                    trailingIcon = {
+                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedFormDropdown)
+                                    },
                                     modifier = Modifier
                                         .menuAnchor()
                                         .fillMaxWidth(),
@@ -339,7 +357,9 @@ fun RegisterScreen(
                         // Submit Button
                         Button(
                             onClick = {
-                                val activeUid = passedUid ?: FirebaseAuth.getInstance().currentUser?.uid
+                                val activeUid = passedUid
+                                    ?: FirebaseAuth.getInstance().currentUser?.uid
+
                                 viewModel.completeRegistration(
                                     uidParam = activeUid,
                                     fullName = fullName.trim(),
@@ -382,7 +402,7 @@ fun RegisterScreen(
                             }
                         }
 
-                        // Error Message Display
+                        // Error Message
                         state.errorMessage?.let { err ->
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
