@@ -2,7 +2,9 @@ package com.maarifa.app.ui.auth
 
 import android.app.Activity
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
 import com.maarifa.app.data.model.AuthProvider
 import com.maarifa.app.data.model.User
@@ -49,10 +51,14 @@ class AuthViewModel(
         viewModelScope.launch {
             when (val result = authRepository.fetchUserProfile(uid)) {
                 is Resource.Success -> _state.value = _state.value.copy(
-                    checkingSession = false, isSignedIn = true, profile = result.data
+                    checkingSession = false,
+                    isSignedIn = true,
+                    profile = result.data
                 )
                 is Resource.Error -> _state.value = _state.value.copy(
-                    checkingSession = false, isSignedIn = true, profile = null
+                    checkingSession = false,
+                    isSignedIn = true,
+                    profile = null
                 )
                 Resource.Loading -> Unit
             }
@@ -67,7 +73,10 @@ class AuthViewModel(
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.signInWithEmail(email, password)) {
             is Resource.Success -> loadProfileAfterAuth(result.data)
-            is Resource.Error -> _state.value = _state.value.copy(isSubmitting = false, errorMessage = result.message)
+            is Resource.Error -> _state.value = _state.value.copy(
+                isSubmitting = false,
+                errorMessage = result.message
+            )
             Resource.Loading -> Unit
         }
     }
@@ -76,7 +85,10 @@ class AuthViewModel(
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.registerWithEmail(email, password)) {
             is Resource.Success -> loadProfileAfterAuth(result.data)
-            is Resource.Error -> _state.value = _state.value.copy(isSubmitting = false, errorMessage = result.message)
+            is Resource.Error -> _state.value = _state.value.copy(
+                isSubmitting = false,
+                errorMessage = result.message
+            )
             Resource.Loading -> Unit
         }
     }
@@ -85,7 +97,10 @@ class AuthViewModel(
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.signInWithGoogle(idToken)) {
             is Resource.Success -> loadProfileAfterAuth(result.data)
-            is Resource.Error -> _state.value = _state.value.copy(isSubmitting = false, errorMessage = result.message)
+            is Resource.Error -> _state.value = _state.value.copy(
+                isSubmitting = false,
+                errorMessage = result.message
+            )
             Resource.Loading -> Unit
         }
     }
@@ -114,7 +129,10 @@ class AuthViewModel(
                 }
             }
             .catch { e ->
-                _state.value = _state.value.copy(isSubmitting = false, errorMessage = e.message)
+                _state.value = _state.value.copy(
+                    isSubmitting = false,
+                    errorMessage = e.message ?: "Imeshindikana kutuma OTP"
+                )
             }
             .launchIn(viewModelScope)
     }
@@ -125,7 +143,10 @@ class AuthViewModel(
             val result = authService.signInWithPhoneCredential(credential)
             loadProfileAfterAuth(result.user?.uid.orEmpty())
         } catch (e: Exception) {
-            _state.value = _state.value.copy(isSubmitting = false, errorMessage = e.message)
+            _state.value = _state.value.copy(
+                isSubmitting = false,
+                errorMessage = e.message ?: "Imeshindikana kuingia"
+            )
         }
     }
 
@@ -133,12 +154,24 @@ class AuthViewModel(
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.confirmOtp(verificationId, code)) {
             is Resource.Success -> loadProfileAfterAuth(result.data)
-            is Resource.Error -> _state.value = _state.value.copy(isSubmitting = false, errorMessage = result.message)
+            is Resource.Error -> _state.value = _state.value.copy(
+                isSubmitting = false,
+                errorMessage = result.message
+            )
             Resource.Loading -> Unit
         }
     }
 
     private suspend fun loadProfileAfterAuth(uid: String) {
+        if (uid.isBlank()) {
+            _state.value = _state.value.copy(
+                isSubmitting = false,
+                isSignedIn = false,
+                errorMessage = "User ID haipatikani"
+            )
+            return
+        }
+
         when (val result = authRepository.fetchUserProfile(uid)) {
             is Resource.Success -> _state.value = _state.value.copy(
                 isSubmitting = false,
@@ -150,7 +183,7 @@ class AuthViewModel(
             is Resource.Error -> _state.value = _state.value.copy(
                 isSubmitting = false,
                 isSignedIn = true,
-                profile = null,
+                profile = null, // Profile haipo bado → nenda Register
                 otpVerificationId = null,
                 otpAutoCredential = null
             )
@@ -171,24 +204,35 @@ class AuthViewModel(
     ) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
 
-        // Tutaangalia kwanza kama tumepata UID kutoka kwenye parameter, au tutachukua active UID kutoka Firebase
-        val activeUid = uidParam.takeIf { !it.isNullOrBlank() } ?: authRepository.currentUserId
+        // Jaribu kupata UID kwa njia zote zinazowezekana
+        val activeUid = uidParam?.takeIf { it.isNotBlank() }
+            ?: authRepository.currentUserId
+            ?: FirebaseAuth.getInstance().currentUser?.uid
 
         if (activeUid.isNullOrBlank()) {
             _state.value = _state.value.copy(
                 isSubmitting = false,
-                errorMessage = "Authentication failed: User ID not found."
+                errorMessage = "Authentication failed: User ID not found. Tafadhali ingia tena."
             )
             return@launch
         }
 
         val result = authRepository.createUserProfile(
-            activeUid, fullName, phoneNumber, email, provider, role, region, schoolName, formClass
+            activeUid,
+            fullName,
+            phoneNumber,
+            email,
+            provider,
+            role,
+            region,
+            schoolName,
+            formClass
         )
+
         when (result) {
             is Resource.Success -> loadProfileAfterAuth(activeUid)
             is Resource.Error -> _state.value = _state.value.copy(
-                isSubmitting = false, 
+                isSubmitting = false,
                 errorMessage = result.message
             )
             Resource.Loading -> Unit
@@ -200,11 +244,11 @@ class AuthViewModel(
         _state.value = AuthUiState(checkingSession = false, isSignedIn = false)
     }
 }
-// Ongeza hii chini kabisa ya AuthViewModel.kt
+
 class AuthViewModelFactory(
     private val authRepository: AuthRepository,
     private val authService: FirebaseAuthService
-) : androidx.lifecycle.ViewModelProvider.Factory {
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
