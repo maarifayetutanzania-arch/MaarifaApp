@@ -7,17 +7,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
-// Imports za UI Screens na AuthViewModel
+// Import UI Screens na ViewModel
 import com.maarifa.app.ui.auth.AuthViewModel
 import com.maarifa.app.ui.auth.LoginScreen
-import com.maarifa.app.ui.auth.RegisterScreen // au SignUpScreen kulingana na jina la file lako
+import com.maarifa.app.ui.auth.RegisterScreen
 import com.maarifa.app.ui.auth.SplashScreen
 
 @Composable
 fun MaarifaNavGraph(
     navController: NavHostController = rememberNavController(),
     startDestination: String = Routes.SPLASH,
-    authViewModel: AuthViewModel = viewModel() // Inatoa default ViewModel instance
+    authViewModel: AuthViewModel = viewModel()
 ) {
     NavHost(
         navController = navController,
@@ -38,10 +38,14 @@ fun MaarifaNavGraph(
         }
 
         composable(Routes.REGISTER) {
-            // Kama Screen yako inaitwa RegisterScreen:
             RegisterScreen(
-                navController = navController,
-                authViewModel = authViewModel
+                viewModel = authViewModel,
+                onRegistrationSuccess = {
+                    // Baada ya kujisajili kwa mafanikio, mpeleke mteja kwenye Login au Home Screen
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.REGISTER) { inclusive = true }
+                    }
+                }
             )
         }
     }
