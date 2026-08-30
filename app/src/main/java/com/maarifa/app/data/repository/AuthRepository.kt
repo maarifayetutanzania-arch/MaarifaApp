@@ -51,9 +51,8 @@ class AuthRepository(
 
     /**
      * Creates the Firestore `users/{uid}` profile document right after first successful
-     * sign-in/registration (PRD 7 student & teacher journeys, step 3-4). School name is
-     * explicitly optional (PRD 8.1). If role == TEACHER, also creates the `teachers/{uid}`
-     * verification record in PENDING state (PRD 7 teacher journey step 3-4).
+     * sign-in/registration. School name is explicitly optional. If role == TEACHER, 
+     * also creates the `teachers/{uid}` verification record in PENDING state.
      */
     suspend fun createUserProfile(
         uid: String,
@@ -95,8 +94,16 @@ class AuthRepository(
 
     suspend fun fetchUserProfile(uid: String): Resource<User> = try {
         val snap = firestore.collection(FirestorePaths.USERS).document(uid).get().await()
-        val user = snap.toObject(User::class.java)
-        if (user != null) Resource.Success(user) else Resource.Error("Profile not found")
+        if (snap.exists()) {
+            val user = snap.toObject(User::class.java)
+            if (user != null) {
+                Resource.Success(user)
+            } else {
+                Resource.Error("Profile format is invalid")
+            }
+        } else {
+            Resource.Error("Profile not found")
+        }
     } catch (e: Exception) {
         Resource.Error(e.message ?: "Could not load profile", e)
     }
