@@ -21,14 +21,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Safe Firebase initialization outside UI
+        // 1. Safe Firebase Initialization
         try {
             FirebaseApp.initializeApp(this)
         } catch (e: Exception) {
             Log.e("MainActivity", "Firebase init error: ${e.message}")
         }
 
-        // Safe Container initialization outside UI
+        // 2. Safe Container Initialization outside Compose
         val container = try {
             maarifaContainer()
         } catch (e: Exception) {
@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
             null
         }
 
+        // 3. UI Scope without outer try-catch blocks on Composables
         setContent {
             MaarifaTheme {
                 val notificationPermission = rememberLauncherForActivityResult(
@@ -49,16 +50,16 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val scope = rememberCoroutineScope()
-                
+
                 LaunchedEffect(Unit) {
                     if (container != null) {
                         val uid = container.authRepository.currentUserId
                         if (uid != null) {
                             try {
                                 FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
-                                    scope.launch { 
+                                    scope.launch {
                                         try {
-                                            container.notificationRepository.saveFcmToken(uid, token) 
+                                            container.notificationRepository.saveFcmToken(uid, token)
                                         } catch (e: Exception) {
                                             Log.e("MainActivity", "Error saving FCM token: ${e.message}")
                                         }
