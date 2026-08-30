@@ -21,11 +21,21 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Initialize Firebase hapa kabla ya kuanza Compose UI
-        try {
+        // 1. Initialize Firebase App
+        val isFirebaseInitialized = try {
             FirebaseApp.initializeApp(this)
+            true
         } catch (e: Exception) {
             Log.e("MainActivity", "Firebase init error: ${e.message}")
+            false
+        }
+
+        // 2. Initialize Container ONCE outside Compose tree
+        val container = try {
+            maarifaContainer()
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Container init error: ${e.message}")
+            null
         }
 
         setContent {
@@ -40,24 +50,25 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                val container = maarifaContainer()
                 val scope = rememberCoroutineScope()
                 
                 LaunchedEffect(Unit) {
-                    val uid = container.authRepository.currentUserId
-                    if (uid != null) {
-                        try {
-                            FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
-                                scope.launch { 
-                                    try {
-                                        container.notificationRepository.saveFcmToken(uid, token) 
-                                    } catch (e: Exception) {
-                                        Log.e("MainActivity", "Error saving FCM token: ${e.message}")
+                    if (isFirebaseInitialized && container != null) {
+                        val uid = container.authRepository.currentUserId
+                        if (uid != null) {
+                            try {
+                                FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                                    scope.launch { 
+                                        try {
+                                            container.notificationRepository.saveFcmToken(uid, token) 
+                                        } catch (e: Exception) {
+                                            Log.e("MainActivity", "Error saving FCM token: ${e.message}")
+                                        }
                                     }
                                 }
+                            } catch (e: Exception) {
+                                Log.e("MainActivity", "Error getting FCM token: ${e.message}")
                             }
-                        } catch (e: Exception) {
-                            Log.e("MainActivity", "Error getting FCM token: ${e.message}")
                         }
                     }
                 }
