@@ -21,16 +21,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // 1. Safe Firebase Initialization
-        val isFirebaseInitialized = try {
+        // Safe Firebase initialization outside UI
+        try {
             FirebaseApp.initializeApp(this)
-            true
         } catch (e: Exception) {
             Log.e("MainActivity", "Firebase init error: ${e.message}")
-            false
         }
 
-        // 2. Safe Container Initialization outside Compose
+        // Safe Container initialization outside UI
         val container = try {
             maarifaContainer()
         } catch (e: Exception) {
@@ -38,7 +36,6 @@ class MainActivity : ComponentActivity() {
             null
         }
 
-        // 3. Render UI without try-catch wrapping Composable functions
         setContent {
             MaarifaTheme {
                 val notificationPermission = rememberLauncherForActivityResult(
@@ -54,7 +51,7 @@ class MainActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
                 
                 LaunchedEffect(Unit) {
-                    if (isFirebaseInitialized && container != null) {
+                    if (container != null) {
                         val uid = container.authRepository.currentUserId
                         if (uid != null) {
                             try {
