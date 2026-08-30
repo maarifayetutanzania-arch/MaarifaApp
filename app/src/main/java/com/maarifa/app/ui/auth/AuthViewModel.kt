@@ -57,7 +57,7 @@ class AuthViewModel(
                 )
                 is Resource.Error -> _state.value = _state.value.copy(
                     checkingSession = false,
-                    isSignedIn = true,
+                    isSignedIn = false, // Zuiya mtumiaji kuelekezwa kwenye UI ya ndani bila profilu
                     profile = null
                 )
                 Resource.Loading -> Unit
@@ -182,8 +182,8 @@ class AuthViewModel(
             )
             is Resource.Error -> _state.value = _state.value.copy(
                 isSubmitting = false,
-                isSignedIn = true,
-                profile = null, // Profile haipo bado → nenda Register
+                isSignedIn = false, // Kama profilu haipo Firestore, nenda usajili badala ya kuset isSignedIn = true
+                profile = null,
                 otpVerificationId = null,
                 otpAutoCredential = null
             )
@@ -204,7 +204,6 @@ class AuthViewModel(
     ) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
 
-        // Jaribu kupata UID kwa njia zote zinazowezekana
         val activeUid = uidParam?.takeIf { it.isNotBlank() }
             ?: authRepository.currentUserId
             ?: FirebaseAuth.getInstance().currentUser?.uid
