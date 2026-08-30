@@ -1,27 +1,29 @@
 package com.maarifa.app
 
-import android.Manifest
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.google.firebase.FirebaseApp
-import com.google.firebase.messaging.FirebaseMessaging
-import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.navigation.MaarifaNavGraph
 import com.maarifa.app.ui.theme.MaarifaTheme
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Initialize Firebase hapa kabla ya kuanza Compose UI
         try {
             FirebaseApp.initializeApp(this)
         } catch (e: Exception) {
@@ -30,39 +32,24 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MaarifaTheme {
-                val notificationPermission = rememberLauncherForActivityResult(
-                    ActivityResultContracts.RequestPermission()
-                ) { }
+                var crashError by remember { mutableStateOf<String?>(null) }
 
-                LaunchedEffect(Unit) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                if (crashError != null) {
+                    // Kama kuna kosa, badala ya kujifunga itaonyesha kosa hapa kwenye kioo!
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = "CRASH DETECTED:\n\n$crashError", color = Color.Red)
+                    }
+                } else {
+                    try {
+                        // Kizuizi cha kukamata crash zote za startup
+                        MaarifaNavGraph()
+                    } catch (e: Throwable) {
+                        crashError = e.stackTraceToString()
                     }
                 }
-
-                val container = maarifaContainer()
-                val scope = rememberCoroutineScope()
-                
-                LaunchedEffect(Unit) {
-                    val uid = container.authRepository.currentUserId
-                    if (uid != null) {
-                        try {
-                            FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
-                                scope.launch { 
-                                    try {
-                                        container.notificationRepository.saveFcmToken(uid, token) 
-                                    } catch (e: Exception) {
-                                        Log.e("MainActivity", "Error saving FCM token: ${e.message}")
-                                    }
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Log.e("MainActivity", "Error getting FCM token: ${e.message}")
-                        }
-                    }
-                }
-
-                MaarifaNavGraph()
             }
         }
     }
