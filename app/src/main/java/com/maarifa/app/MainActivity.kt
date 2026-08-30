@@ -21,22 +21,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // 1. Safe Firebase Initialization
+        // Initialize Firebase hapa kabla ya kuanza Compose UI
         try {
             FirebaseApp.initializeApp(this)
         } catch (e: Exception) {
             Log.e("MainActivity", "Firebase init error: ${e.message}")
         }
 
-        // 2. Safe Container Initialization outside Compose
-        val container = try {
-            maarifaContainer()
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Container init error: ${e.message}")
-            null
-        }
-
-        // 3. UI Scope without outer try-catch blocks on Composables
         setContent {
             MaarifaTheme {
                 val notificationPermission = rememberLauncherForActivityResult(
@@ -49,25 +40,24 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                val container = maarifaContainer()
                 val scope = rememberCoroutineScope()
-
+                
                 LaunchedEffect(Unit) {
-                    if (container != null) {
-                        val uid = container.authRepository.currentUserId
-                        if (uid != null) {
-                            try {
-                                FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
-                                    scope.launch {
-                                        try {
-                                            container.notificationRepository.saveFcmToken(uid, token)
-                                        } catch (e: Exception) {
-                                            Log.e("MainActivity", "Error saving FCM token: ${e.message}")
-                                        }
+                    val uid = container.authRepository.currentUserId
+                    if (uid != null) {
+                        try {
+                            FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                                scope.launch { 
+                                    try {
+                                        container.notificationRepository.saveFcmToken(uid, token) 
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", "Error saving FCM token: ${e.message}")
                                     }
                                 }
-                            } catch (e: Exception) {
-                                Log.e("MainActivity", "Error getting FCM token: ${e.message}")
                             }
+                        } catch (e: Exception) {
+                            Log.e("MainActivity", "Error getting FCM token: ${e.message}")
                         }
                     }
                 }
