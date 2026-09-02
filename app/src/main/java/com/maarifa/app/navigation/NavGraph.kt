@@ -13,23 +13,24 @@ import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.ui.auth.AuthViewModel
 import com.maarifa.app.ui.auth.AuthViewModelFactory
 import com.maarifa.app.ui.auth.LoginScreen
+import com.maarifa.app.ui.auth.OtpVerificationScreen
 import com.maarifa.app.ui.auth.RegisterScreen
 import com.maarifa.app.ui.auth.SplashScreen
-// Ongeza imports za screens zingine unazozitumia (OtpScreen, StudentHomeScreen, TeacherHomeScreen n.k.)
+import com.maarifa.app.ui.auth.WelcomeScreen
+import com.maarifa.app.ui.home.StudentHomeScreen
+import com.maarifa.app.ui.home.TeacherHomeScreen
 
 @Composable
 fun MaarifaNavGraph(
     navController: NavHostController = rememberNavController(),
-    startDestination: String = Routes.SPLASH
-) {
-    val container = maarifaContainer()
-    val authViewModel: AuthViewModel = viewModel(
+    startDestination: String = Routes.SPLASH,
+    authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(
-            authRepository = container.authRepository,
-            authService = container.authService
+            authRepository = maarifaContainer().authRepository,
+            authService = maarifaContainer().authService
         )
     )
-
+) {
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -42,6 +43,10 @@ fun MaarifaNavGraph(
             )
         }
 
+        composable(Routes.WELCOME) {
+            WelcomeScreen(navController = navController)
+        }
+
         composable(Routes.LOGIN) {
             LoginScreen(
                 authViewModel = authViewModel,
@@ -52,14 +57,9 @@ fun MaarifaNavGraph(
         composable(Routes.REGISTER) {
             val currentUid = FirebaseAuth.getInstance().currentUser?.uid
             RegisterScreen(
-                viewModel = authViewModel,
-                onRegistrationSuccess = {
-                    // Baada ya kusajili, nenda Student Home (au Teacher kulingana na role)
-                    navController.navigate(Routes.STUDENT_HOME) {
-                        popUpTo(Routes.REGISTER) { inclusive = true }
-                    }
-                },
-                passedUid = currentUid          // ← Hii ndiyo inatatua "User ID not found"
+                authViewModel = authViewModel,
+                navController = navController,
+                passedUid = currentUid
             )
         }
 
@@ -67,28 +67,43 @@ fun MaarifaNavGraph(
         composable(
             route = Routes.OTP,
             arguments = listOf(
-                navArgument("verificationId") { type = NavType.StringType }
+                navArgument("verificationId") { type = NavType.StringType },
+                navArgument("phone") { 
+                    type = NavType.StringType 
+                    defaultValue = "" 
+                }
             )
         ) { backStackEntry ->
             val verificationId = backStackEntry.arguments?.getString("verificationId") ?: ""
-            // TODO: Weka OtpScreen yako hapa
-            // OtpScreen(
-            //     verificationId = verificationId,
-            //     authViewModel = authViewModel,
-            //     navController = navController
-            // )
+            val phone = backStackEntry.arguments?.getString("phone") ?: ""
+            
+            OtpVerificationScreen(
+                verificationId = verificationId,
+                phoneNumber = phone,
+                authViewModel = authViewModel,
+                navController = navController
+            )
         }
 
         // ==================== STUDENT ====================
         composable(Routes.STUDENT_HOME) {
-            // StudentHomeScreen(navController = navController, authViewModel = authViewModel)
+            StudentHomeScreen(navController = navController, authViewModel = authViewModel)
         }
+
+        composable(Routes.SEARCH) { /* SearchScreen */ }
+        composable(Routes.SUBSCRIPTION) { /* SubscriptionScreen */ }
+        composable(Routes.DOWNLOADS) { /* DownloadsScreen */ }
+        composable(Routes.STUDENT_PROFILE) { /* StudentProfileScreen */ }
 
         // ==================== TEACHER ====================
         composable(Routes.TEACHER_HOME) {
-            // TeacherHomeScreen(navController = navController, authViewModel = authViewModel)
+            TeacherHomeScreen(navController = navController, authViewModel = authViewModel)
         }
 
-        // Ongeza routes zingine unazohitaji baadaye...
+        composable(Routes.TEACHER_VERIFICATION_PENDING) { /* TeacherPendingScreen */ }
+        composable(Routes.UPLOAD_MATERIAL) { /* UploadMaterialScreen */ }
+        composable(Routes.TEACHER_MATERIALS) { /* TeacherMaterialsScreen */ }
+        composable(Routes.TEACHER_EARNINGS) { /* TeacherEarningsScreen */ }
+        composable(Routes.TEACHER_PROFILE) { /* TeacherProfileScreen */ }
     }
 }
