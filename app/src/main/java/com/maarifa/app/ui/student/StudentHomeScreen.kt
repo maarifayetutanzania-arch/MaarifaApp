@@ -3,7 +3,6 @@ package com.maarifa.app.ui.student
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CloudDownload
@@ -19,19 +18,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.maarifa.app.ui.auth.AuthViewModel
 
 private sealed class StudentTab(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     data object Library : StudentTab("tab_library", "Library", Icons.Default.MenuBook)
@@ -43,7 +43,10 @@ private sealed class StudentTab(val route: String, val label: String, val icon: 
 private val studentTabs = listOf(StudentTab.Library, StudentTab.Downloads, StudentTab.Subscription, StudentTab.Profile)
 
 @Composable
-fun StudentHomeScreen(onSignedOut: () -> Unit) {
+fun StudentHomeScreen(
+    navController: NavHostController,
+    authViewModel: AuthViewModel
+) {
     val innerNav = rememberNavController()
 
     // Maarifa Brand Colors
@@ -105,7 +108,9 @@ fun StudentHomeScreen(onSignedOut: () -> Unit) {
                 DownloadsScreen(onOpen = { id -> innerNav.navigate("student_reader/$id") })
             }
             composable(StudentTab.Subscription.route) { SubscriptionScreen() }
-            composable(StudentTab.Profile.route) { StudentProfileScreen(onSignedOut = onSignedOut) }
+            composable(StudentTab.Profile.route) { 
+                StudentProfileScreen(onSignedOut = { authViewModel.signOut() }) 
+            }
 
             composable(
                 "student_material/{materialId}",
