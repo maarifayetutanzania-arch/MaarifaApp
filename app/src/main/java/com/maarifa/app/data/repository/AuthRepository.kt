@@ -75,8 +75,8 @@ class AuthRepository(
             authProvider = provider.name,
             role = role.name,
             region = region,
-            schoolName = schoolName?.takeIf { it.isNotBlank() },
-            formClass = if (role == UserRole.STUDENT) formClass else null,
+            schoolName = schoolName.orEmpty(),
+            formClass = if (role == UserRole.STUDENT) formClass.orEmpty() else "",
             status = AccountStatus.ACTIVE.name
         )
         firestore.collection(FirestorePaths.USERS).document(uid).set(user).await()
@@ -110,3 +110,4 @@ class AuthRepository(
         Resource.Error(e.message ?: "Could not load profile", e)
     }
 }
+
