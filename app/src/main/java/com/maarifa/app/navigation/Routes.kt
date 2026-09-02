@@ -1,20 +1,35 @@
 package com.maarifa.app.navigation
 
+import android.net.Uri
+
 object Routes {
+    // Auth graph
     const val SPLASH = "splash"
     const val WELCOME = "welcome"
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val OTP = "otp/{verificationId}?phone={phone}"
-    fun otp(verificationId: String, phone: String = "") = "otp/$verificationId?phone=$phone"
+    
+    fun otp(verificationId: String, phone: String = ""): String {
+        val encodedPhone = Uri.encode(phone)
+        return "otp/$verificationId?phone=$encodedPhone"
+    }
 
     // Student graph
     const val STUDENT_HOME = "student_home"
     const val SEARCH = "search"
     const val MATERIAL_DETAIL = "material/{materialId}"
-    fun materialDetail(materialId: String) = "material/$materialId"
+    
+    fun materialDetail(materialId: String): String {
+        return "material/${Uri.encode(materialId)}"
+    }
+    
     const val READER = "reader/{materialId}"
-    fun reader(materialId: String) = "reader/$materialId"
+    
+    fun reader(materialId: String): String {
+        return "reader/${Uri.encode(materialId)}"
+    }
+    
     const val SUBSCRIPTION = "subscription"
     const val DOWNLOADS = "downloads"
     const val STUDENT_PROFILE = "student_profile"
