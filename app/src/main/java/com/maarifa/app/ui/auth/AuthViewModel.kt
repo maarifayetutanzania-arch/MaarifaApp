@@ -58,7 +58,7 @@ class AuthViewModel(
                 )
                 is Resource.Error -> _state.value = _state.value.copy(
                     checkingSession = false,
-                    isSignedIn = false,
+                    isSignedIn = true, // Yupo logged in Firebase Auth hata kama hana Firestore profile
                     profile = null
                 )
                 Resource.Loading -> Unit
@@ -215,7 +215,7 @@ class AuthViewModel(
             )
             is Resource.Error -> _state.value = _state.value.copy(
                 isSubmitting = false,
-                isSignedIn = false,
+                isSignedIn = true, // User amefanikiwa ku-authenticate, awe na uwezo wa kwenda kujaza profile
                 profile = null,
                 otpVerificationId = null,
                 otpAutoCredential = null
@@ -289,4 +289,3 @@ class AuthViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
-
