@@ -218,7 +218,10 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                         ) {
                             Tab(
                                 selected = tab == LoginTab.EMAIL,
-                                onClick = { tab = LoginTab.EMAIL },
+                                onClick = { 
+                                    authViewModel.clearError()
+                                    tab = LoginTab.EMAIL 
+                                },
                                 text = {
                                     Text(
                                         "Email",
@@ -229,7 +232,10 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                             )
                             Tab(
                                 selected = tab == LoginTab.PHONE,
-                                onClick = { tab = LoginTab.PHONE },
+                                onClick = { 
+                                    authViewModel.clearError()
+                                    tab = LoginTab.PHONE 
+                                },
                                 text = {
                                     Text(
                                         "Simu",
@@ -244,7 +250,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
 
                         when (tab) {
                             LoginTab.EMAIL -> EmailLoginForm(authViewModel, buttonGradient, primaryGreen)
-                            LoginTab.PHONE -> PhoneLoginForm(authViewModel, buttonGradient)
+                            LoginTab.PHONE -> PhoneLoginForm(authViewModel, buttonGradient, primaryGreen)
                         }
 
                         Spacer(modifier = Modifier.height(20.dp))
@@ -308,7 +314,6 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                                 fontWeight = FontWeight.Bold,
                                 color = primaryGreen,
                                 modifier = Modifier.clickable {
-                                    // Imetumika Routes.REGISTER kutoka kwenye Routes.kt yako
                                     navController.navigate(Routes.REGISTER)
                                 }
                             )
@@ -430,10 +435,12 @@ private fun EmailLoginForm(
 @Composable
 private fun PhoneLoginForm(
     authViewModel: AuthViewModel,
-    buttonGradient: Brush
+    buttonGradient: Brush,
+    primaryGreen: Color
 ) {
     var phone by remember { mutableStateOf("+255") }
-    val context = LocalContext.current
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Column {
@@ -450,21 +457,58 @@ private fun PhoneLoginForm(
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = Color(0xFFFAFAFA),
                     focusedContainerColor = Color.White,
-                    unfocusedBorderColor = Color(0xFFE0E0E0)
+                    unfocusedBorderColor = Color(0xFFE0E0E0),
+                    focusedBorderColor = primaryGreen
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            )
+        }
+
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Neno la Siri", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
+                Text(
+                    "Umesahau?",
+                    fontSize = 11.sp,
+                    color = primaryGreen,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { /* Reset password flow */ }
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                placeholder = { Text("Ingiza neno la siri", color = Color.LightGray) },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Color.Gray) },
+                trailingIcon = {
+                    val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = null, tint = Color.Gray)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                singleLine = true,
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = Color(0xFFFAFAFA),
+                    focusedContainerColor = Color.White,
+                    unfocusedBorderColor = Color(0xFFE0E0E0),
+                    focusedBorderColor = primaryGreen
+                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
         }
 
         Spacer(modifier = Modifier.height(6.dp))
 
         Button(
-            onClick = {
-                context.findActivity()?.let { activity ->
-                    authViewModel.requestOtp(activity, phone.trim())
-                }
-            },
-            enabled = phone.length >= 10,
+            onClick = { authViewModel.signInWithPhone(phone.trim(), password) },
+            enabled = phone.length >= 10 && password.isNotBlank(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
@@ -472,7 +516,7 @@ private fun PhoneLoginForm(
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text("Tuma Namba ya Uhakiki", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Ingia", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }
