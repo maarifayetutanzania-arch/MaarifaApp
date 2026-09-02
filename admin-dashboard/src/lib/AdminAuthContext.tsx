@@ -8,9 +8,6 @@ interface AdminAuthState {
   loading: boolean;
   firebaseUser: User | null;
   adminProfile: AppUser | null;
-  /** True once we've confirmed role === "ADMIN" on the Firestore user doc — this is a
-   * UX guard only. The real security boundary is server-side: every admin Cloud
-   * Function re-checks role itself, and Firestore rules block direct writes outright. */
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -27,7 +24,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoading(true);
       setFirebaseUser(user);
+
       if (!user) {
         setAdminProfile(null);
         setLoading(false);
@@ -36,19 +35,27 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
       try {
         const snap = await getDoc(doc(db, "users", user.uid));
-        const data = snap.exists() ? (snap.data() as AppUser) : null;
+        
+        if (snap.exists()) {
+          const data = snap.data() as AppUser;
+          // Inakagua bila kujali kama ni "ADMIN", "admin", au "Admin"
+          const userRole = String(data.role || (data as any).roleEnum || "").toUpperCase();
 
-        // Uthibitisho wa ziada: Hakikisha mtumiaji ni ADMIN
-        if (data && data.role === "ADMIN") {
-          setAdminProfile(data);
+          if (userRole === "ADMIN") {
+            setAdminProfile(data);
+            setError(null);
+          } else {
+            setAdminProfile(null);
+            setError(`Akaunti ya ${user.email} haina idhini ya ADMIN (Role iliyopo: "${data.role || 'Haina role'}").`);
+          }
         } else {
           setAdminProfile(null);
-          setError("Huna mamlaka ya kufikia Admin Dashboard.");
-          await fbSignOut(auth);
+          setError(`Document ya mtumiaji haijapatikana kwenye Firestore (users/${user.uid}). Create document hii kwanza.`);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching admin profile:", err);
         setAdminProfile(null);
+        setError("Hitilafu ya kusoma Firestore: " + (err.message || "Permission denied"));
       } finally {
         setLoading(false);
       }
@@ -77,9 +84,10 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await fbSignOut(auth);
     setAdminProfile(null);
+    setError(null);
   };
 
-  const isAdmin = adminProfile?.role === "ADMIN";
+  const isAdmin = adminProfile !== null && String(adminProfile.role).toUpperCase() === "ADMIN";
 
   return (
     <AdminAuthContext.Provider
