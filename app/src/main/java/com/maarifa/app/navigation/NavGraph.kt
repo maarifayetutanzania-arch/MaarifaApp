@@ -3,6 +3,7 @@ package com.maarifa.app.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -33,7 +34,7 @@ fun NavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel = viewModel(
         factory = SimpleViewModelFactory {
-            AuthViewModel(maarifaContainer().authRepository)
+            AuthViewModel(maarifaContainer(LocalContext.current.applicationContext).authRepository)
         }
     )
 ) {
@@ -51,13 +52,7 @@ fun NavGraph(
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
-                onNavigateToRegister = { navController.navigate(Screen.Register.route) },
-                onLoginSuccess = {
-                    val target = if (state.profile?.role == "TEACHER") Screen.TeacherHome.route else Screen.StudentHome.route
-                    navController.navigate(target) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
-                },
+                navController = navController,
                 authViewModel = authViewModel
             )
         }
@@ -68,7 +63,7 @@ fun NavGraph(
                 onRegisterSuccess = {
                     val target = if (state.profile?.role == "TEACHER") Screen.TeacherHome.route else Screen.StudentHome.route
                     navController.navigate(target) {
-                        popUpTo(Screen.Register.route) { inclusive = true }
+                        popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
                 onNavigateToOtp = { phone ->
