@@ -3,16 +3,15 @@ package com.maarifa.app.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.maarifa.app.di.SimpleViewModelFactory
 import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.ui.auth.AuthViewModel
+import com.maarifa.app.ui.auth.AuthViewModelFactory
 import com.maarifa.app.ui.auth.LoginScreen
 import com.maarifa.app.ui.auth.OtpVerificationScreen
 import com.maarifa.app.ui.auth.RegisterScreen
@@ -33,9 +32,10 @@ sealed class Screen(val route: String) {
 fun NavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel = viewModel(
-        factory = SimpleViewModelFactory {
-            AuthViewModel(maarifaContainer(LocalContext.current.applicationContext).authRepository)
-        }
+        factory = AuthViewModelFactory(
+            maarifaContainer().authRepository,
+            maarifaContainer().authService
+        )
     )
 ) {
     val state by authViewModel.state.collectAsState()
