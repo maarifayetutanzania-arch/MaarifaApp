@@ -6,7 +6,6 @@ import com.maarifa.app.data.model.AuthProvider
 import com.maarifa.app.data.model.Teacher
 import com.maarifa.app.data.model.TeacherVerificationStatus
 import com.maarifa.app.data.model.User
-import com.maarifa.app.data.model.UserProfile
 import com.maarifa.app.data.model.UserRole
 import com.maarifa.app.data.remote.FirebaseAuthService
 import com.maarifa.app.util.FirestorePaths
@@ -29,9 +28,7 @@ class AuthRepository(
         Resource.Error(e.message ?: "Sign-in failed", e)
     }
 
-    // ONGEZO: Njia ya kuingia kwa namba ya simu + password (kupitia Custom token au Auth provider)
     suspend fun signInWithPhone(phoneNumber: String, password: String): Resource<String> = try {
-        // Ikiwa unatumia custom backend au Auth provider kwa namba ya simu
         val result = authService.signInWithEmail(phoneNumber, password) 
         Resource.Success(result.user?.uid.orEmpty())
     } catch (e: Exception) {
