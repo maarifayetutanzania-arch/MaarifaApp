@@ -1,9 +1,7 @@
 package com.maarifa.app.ui.teacher
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Folder
@@ -14,7 +12,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -26,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -41,6 +38,7 @@ import androidx.navigation.compose.rememberNavController
 import com.maarifa.app.data.model.TeacherVerificationStatus
 import com.maarifa.app.di.SimpleViewModelFactory
 import com.maarifa.app.di.maarifaContainer
+import com.maarifa.app.ui.auth.AuthViewModel
 
 private sealed class TeacherTab(
     val route: String,
@@ -62,7 +60,10 @@ private val teacherTabs = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TeacherHomeScreen(onSignedOut: () -> Unit) {
+fun TeacherHomeScreen(
+    navController: NavHostController,
+    authViewModel: AuthViewModel
+) {
     val container = maarifaContainer()
     val dashboardVm: TeacherDashboardViewModel = viewModel(
         factory = SimpleViewModelFactory {
@@ -72,13 +73,10 @@ fun TeacherHomeScreen(onSignedOut: () -> Unit) {
     val dashboardState by dashboardVm.state.collectAsState()
     val innerNav = rememberNavController()
 
-    // Maarifa Brand Colors
     val primaryGreen = Color(0xFF1E7F55)
     val darkGreen = Color(0xFF1B5E20)
     val lightGreenIndicator = Color(0xFFC8E6C9)
 
-    // Non-verified teachers should not reach the upload/earnings tools even if they
-    // navigate here directly — the pending screen owns routing until VERIFIED.
     if (dashboardState.teacher?.verificationStatus != TeacherVerificationStatus.VERIFIED.name && !dashboardState.isLoading) {
         TeacherVerificationPendingScreen(onVerified = {})
         return
@@ -97,8 +95,7 @@ fun TeacherHomeScreen(onSignedOut: () -> Unit) {
                 },
                 actions = {
                     IconButton(onClick = {
-                        dashboardVm.signOut()
-                        onSignedOut()
+                        authViewModel.signOut()
                     }) {
                         Icon(
                             imageVector = Icons.Default.Logout,
