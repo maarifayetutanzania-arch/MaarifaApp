@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                MaarifaNavGraph(authViewModel = authViewModel)
+                MaarifaNavGraph()
             }
         }
     }
