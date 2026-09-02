@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.maarifa.app.data.model.AuthProvider
 import com.maarifa.app.data.model.UserRole
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,12 +37,30 @@ fun RegisterScreen(
     var roleExpanded by remember { mutableStateOf(false) }
     var classExpanded by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.isSignedIn) {
+    // 1. Mfumo ukishakuwa Authenticated kwenye Firebase Auth:
+    LaunchedEffect(state.isSignedIn, state.profile) {
         if (state.isSignedIn) {
-            onRegisterSuccess()
+            if (state.profile == null) {
+                // Kama bado profile haijaundwa Firestore, itengeneze kwa kutumia taarifa za fomu
+                authViewModel.completeRegistration(
+                    uidParam = null,
+                    fullName = fullName,
+                    phoneNumber = phoneNumber,
+                    email = email,
+                    provider = AuthProvider.EMAIL,
+                    role = selectedRole,
+                    region = region,
+                    schoolName = schoolName.ifBlank { null },
+                    formClass = if (selectedRole == UserRole.STUDENT) formClass else null
+                )
+            } else {
+                // Profile tayari ipo Firestore! Mpeleke mtumiaji Home Screen
+                onRegisterSuccess()
+            }
         }
     }
 
+    // 2. Mfumo wa simu (OTP Navigation)
     LaunchedEffect(state.otpVerificationId) {
         if (!state.otpVerificationId.isNullOrBlank()) {
             onNavigateToOtp(phoneNumber)
@@ -188,13 +207,13 @@ fun RegisterScreen(
 
         Button(
             onClick = {
-                if (email.isNotBlank()) {
+                if (email.isNotBlank() && password.isNotBlank()) {
                     authViewModel.registerWithEmail(email, password)
                 } else if (phoneNumber.isNotBlank() && context is Activity) {
                     authViewModel.requestOtp(context, phoneNumber)
                 }
             },
-            enabled = !state.isSubmitting,
+            enabled = !state.isSubmitting && fullName.isNotBlank() && region.isNotBlank(),
             modifier = Modifier.fillMaxWidth()
         ) {
             if (state.isSubmitting) {
@@ -211,4 +230,3 @@ fun RegisterScreen(
         }
     }
 }
-
