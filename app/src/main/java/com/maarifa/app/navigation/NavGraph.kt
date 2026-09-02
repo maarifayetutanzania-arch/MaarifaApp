@@ -5,31 +5,37 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import com.maarifa.app.di.SimpleViewModelFactory
+import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.ui.auth.AuthViewModel
 import com.maarifa.app.ui.auth.LoginScreen
 import com.maarifa.app.ui.auth.OtpVerificationScreen
 import com.maarifa.app.ui.auth.RegisterScreen
-import com.maarifa.app.ui.home.StudentHomeScreen
-import com.maarifa.app.ui.home.TeacherHomeScreen
+import com.maarifa.app.ui.student.StudentHomeScreen
+import com.maarifa.app.ui.teacher.TeacherHomeScreen
 
 sealed class Screen(val route: String) {
-    object Login : Screen("login")
-    object Register : RegisterScreenRoute("register")
-    object OtpVerification : Screen("otp_verification/{phoneNumber}") {
+    data object Login : Screen("login")
+    data object Register : Screen("register")
+    data object OtpVerification : Screen("otp_verification/{phoneNumber}") {
         fun createRoute(phoneNumber: String) = "otp_verification/$phoneNumber"
     }
-    object StudentHome : Screen("student_home")
-    object TeacherHome : Screen("teacher_home")
+    data object StudentHome : Screen("student_home")
+    data object TeacherHome : Screen("teacher_home")
 }
-
-open class RegisterScreenRoute(route: String) : Screen(route)
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel(
+        factory = SimpleViewModelFactory {
+            AuthViewModel(maarifaContainer().authRepository)
+        }
+    )
 ) {
     val state by authViewModel.state.collectAsState()
 
@@ -72,7 +78,10 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.OtpVerification.route) { backStackEntry ->
+        composable(
+            route = Screen.OtpVerification.route,
+            arguments = listOf(navArgument("phoneNumber") { type = NavType.StringType })
+        ) { backStackEntry ->
             val phoneNumber = backStackEntry.arguments?.getString("phoneNumber").orEmpty()
             OtpVerificationScreen(
                 phoneNumber = phoneNumber,
@@ -87,11 +96,17 @@ fun NavGraph(
         }
 
         composable(Screen.StudentHome.route) {
-            StudentHomeScreen(navController = navController, authViewModel = authViewModel)
+            StudentHomeScreen(
+                navController = navController,
+                authViewModel = authViewModel
+            )
         }
 
         composable(Screen.TeacherHome.route) {
-            TeacherHomeScreen(navController = navController, authViewModel = authViewModel)
+            TeacherHomeScreen(
+                navController = navController,
+                authViewModel = authViewModel
+            )
         }
     }
 }
