@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,7 +49,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -75,15 +73,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
-import com.google.firebase.auth.FirebaseAuth
 import com.maarifa.app.R
 import com.maarifa.app.data.model.AuthProvider
+import com.maarifa.app.data.model.UserProfile
 import com.maarifa.app.data.model.UserRole
 import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.navigation.Routes
@@ -145,12 +142,26 @@ fun RegisterScreen(
         colors = listOf(primaryGreen, lightGreen)
     )
 
+    // Function ya kutengeneza UserProfile object kutoka kwenye form state
+    fun buildProfile(uid: String = ""): UserProfile {
+        return UserProfile(
+            id = uid,
+            fullName = fullName.trim(),
+            roleEnum = selectedRole,
+            region = selectedRegion,
+            schoolName = schoolName.trim().ifBlank { null },
+            formClass = if (selectedRole == UserRole.STUDENT) selectedFormClass else null
+        )
+    }
+
     // Google Auth Launcher
     val googleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
             val account = task.getResult(ApiException::class.java)
-            account?.idToken?.let { authViewModel.signInWithGoogleIdToken(it) }
+            account?.idToken?.let { token ->
+                authViewModel.signInWithGoogleIdToken(token, buildProfile())
+            }
         } catch (_: ApiException) { /* Cancelled */ }
     }
 
@@ -421,12 +432,13 @@ fun RegisterScreen(
                         // SUBMIT BUTTON
                         Button(
                             onClick = {
+                                val profile = buildProfile()
                                 if (registerMethod == RegisterMethod.PHONE) {
                                     context.findActivity()?.let { activity ->
-                                        authViewModel.requestOtp(activity, phoneNumber.trim())
+                                        authViewModel.requestOtp(activity, phoneNumber.trim(), profile)
                                     }
                                 } else {
-                                    authViewModel.registerWithEmail(email.trim(), password)
+                                    authViewModel.registerWithEmail(email.trim(), password, profile)
                                 }
                             },
                             enabled = fullName.isNotBlank() && selectedRegion.isNotBlank() && !state.isSubmitting,
