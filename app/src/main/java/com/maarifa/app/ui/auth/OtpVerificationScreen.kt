@@ -1,10 +1,10 @@
 package com.maarifa.app.ui.auth
 
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,13 +13,16 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MarkEmailRead
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,16 +51,19 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.maarifa.app.ui.common.GradientButton
+import androidx.navigation.NavController
+import com.maarifa.app.data.model.UserRole
+import com.maarifa.app.navigation.Routes
 
 @Composable
 fun OtpVerificationScreen(
-    authViewModel: AuthViewModel,
     verificationId: String,
-    phoneNumber: String = ""
+    phoneNumber: String,
+    authViewModel: AuthViewModel,
+    navController: NavController
 ) {
     val state by authViewModel.state.collectAsState()
-    var code by remember { mutableStateOf("") }
+    var otpCode by remember { mutableStateOf("") }
     val context = LocalContext.current
 
     val primaryGreen = Color(0xFF1E7F55)
@@ -65,19 +71,25 @@ fun OtpVerificationScreen(
     val backgroundGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFFE8F5E9), Color(0xFFC8E6C9), Color(0xFFA5D6A7))
     )
+    val buttonGradient = Brush.horizontalGradient(
+        colors = listOf(primaryGreen, lightGreen)
+    )
 
-    // Kama mfumo umesoma SMS yenyewe (Auto-Verified)
-    LaunchedEffect(state.otpAutoCredential) {
-        state.otpAutoCredential?.let { credential ->
-            authViewModel.signInWithAutoCredential(credential)
-        }
-    }
-
-    // Auto-submit code pale tu mtumiaji anapomaliza kuingiza namba 6
-    LaunchedEffect(code) {
-        if (code.length == 6 && !state.isSubmitting) {
-            val activeVerificationId = state.otpVerificationId ?: verificationId
-            authViewModel.confirmOtp(activeVerificationId, code)
+    // Ukimaliza kuthibitisha OTP na mtumiaji akaingia
+    LaunchedEffect(state.isSignedIn, state.profile, state.isSubmitting) {
+        if (state.isSignedIn && !state.isSubmitting) {
+            val profile = state.profile
+            if (profile != null) {
+                val dest = if (profile.roleEnum == UserRole.TEACHER) Routes.TEACHER_HOME else Routes.STUDENT_HOME
+                navController.navigate(dest) {
+                    popUpTo(Routes.WELCOME) { inclusive = true }
+                }
+            } else {
+                // Kama hana profile, mpeleke amalizie usajili
+                navController.navigate(Routes.REGISTER) {
+                    popUpTo(Routes.WELCOME) { inclusive = true }
+                }
+            }
         }
     }
 
@@ -97,7 +109,7 @@ fun OtpVerificationScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Card(
@@ -110,27 +122,24 @@ fun OtpVerificationScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
                             modifier = Modifier
                                 .size(70.dp)
                                 .clip(CircleShape)
-                                .background(
-                                    Brush.linearGradient(
-                                        listOf(Color(0xFF81C784), primaryGreen)
-                                    )
-                                ),
+                                .background(Brush.linearGradient(listOf(Color(0xFF81C784), primaryGreen))),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Lock,
+                                imageVector = Icons.Default.MarkEmailRead,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(36.dp)
                             )
                         }
+
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         Text(
                             text = "Thibitisha Namba",
@@ -139,80 +148,77 @@ fun OtpVerificationScreen(
                             color = Color(0xFF1B5E20)
                         )
 
+                        Spacer(modifier = Modifier.height(8.dp))
+
                         Text(
-                            text = if (phoneNumber.isNotBlank()) 
-                                "Tumetuma msimbo wa tarakimu 6 kwenda $phoneNumber" 
-                            else 
-                                "Weka msimbo wa tarakimu 6 uliotumiwa kwenye simu yako.",
+                            text = "Imepelekwa kodi ya tarakimu 6 kwenda namba:\n$phoneNumber",
                             fontSize = 13.sp,
                             color = Color.Gray,
                             textAlign = TextAlign.Center
                         )
 
+                        Spacer(modifier = Modifier.height(24.dp))
+
                         OutlinedTextField(
-                            value = code,
-                            onValueChange = { input ->
-                                if (input.length <= 6 && input.all { it.isDigit() }) {
-                                    code = input
-                                }
-                            },
-                            placeholder = { Text("000000", color = Color.LightGray) },
-                            enabled = !state.isSubmitting,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                            value = otpCode,
+                            onValueChange = { if (it.length <= 6) otpCode = it },
+                            placeholder = { Text("000000", color = Color.LightGray, textAlign = TextAlign.Center) },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
                             shape = RoundedCornerShape(14.dp),
+                            singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
                                 unfocusedContainerColor = Color(0xFFFAFAFA),
                                 focusedContainerColor = Color.White,
                                 unfocusedBorderColor = Color(0xFFE0E0E0),
                                 focusedBorderColor = primaryGreen
-                            )
+                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
 
-                        GradientButton(
-                            text = if (state.isSubmitting) "Inathibitisha..." else "Thibitisha",
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Button(
                             onClick = {
-                                val activeVerificationId = state.otpVerificationId ?: verificationId
-                                authViewModel.confirmOtp(activeVerificationId, code)
+                                if (otpCode.length == 6) {
+                                    authViewModel.confirmOtp(verificationId, otpCode.trim())
+                                }
                             },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = code.length == 6 && !state.isSubmitting
-                        )
+                            enabled = otpCode.length == 6 && !state.isSubmitting,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .background(buttonGradient, shape = RoundedCornerShape(16.dp)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+                        ) {
+                            Text("Thibitisha", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
 
-                        // Tuma Tena Code (Resend OTP Option)
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         TextButton(
                             onClick = {
-                                if (phoneNumber.isNotBlank() && context is Activity) {
-                                    authViewModel.requestOtp(context, phoneNumber)
+                                context.findActivity()?.let { activity ->
+                                    authViewModel.requestOtp(activity, phoneNumber)
                                 }
                             },
                             enabled = !state.isSubmitting
                         ) {
                             Text(
-                                text = "Hukuipata code? Tuma Tena",
+                                text = "Hukuipata kodi? Tuma Tena",
                                 color = primaryGreen,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
 
-                        // Error Display
                         state.errorMessage?.let { err ->
-                            Text(
-                                text = err,
-                                color = MaterialTheme.colorScheme.error,
-                                fontSize = 12.sp,
-                                textAlign = TextAlign.Center
-                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(text = err, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, textAlign = TextAlign.Center)
                         }
 
                         if (state.isSubmitting) {
-                            CircularProgressIndicator(
-                                color = primaryGreen,
-                                strokeWidth = 3.dp,
-                                modifier = Modifier.size(28.dp)
-                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            CircularProgressIndicator(modifier = Modifier.size(26.dp), color = primaryGreen)
                         }
                     }
                 }
