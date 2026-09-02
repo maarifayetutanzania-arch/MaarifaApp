@@ -5,8 +5,8 @@ object Routes {
     const val WELCOME = "welcome"
     const val LOGIN = "login"
     const val REGISTER = "register"
-    const val OTP = "otp/{verificationId}"
-    fun otp(verificationId: String) = "otp/$verificationId"
+    const val OTP = "otp/{verificationId}?phone={phone}"
+    fun otp(verificationId: String, phone: String = "") = "otp/$verificationId?phone=$phone"
 
     // Student graph
     const val STUDENT_HOME = "student_home"
