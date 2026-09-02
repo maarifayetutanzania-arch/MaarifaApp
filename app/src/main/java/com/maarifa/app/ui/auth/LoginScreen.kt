@@ -352,6 +352,7 @@ private fun EmailLoginForm(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    val isEnabled = email.isNotBlank() && password.isNotBlank()
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Column {
@@ -419,15 +420,18 @@ private fun EmailLoginForm(
 
         Button(
             onClick = { authViewModel.signInWithEmail(email.trim(), password) },
-            enabled = email.isNotBlank() && password.isNotBlank(),
+            enabled = isEnabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
-                .background(buttonGradient, shape = RoundedCornerShape(16.dp)),
+                .then(
+                    if (isEnabled) Modifier.background(buttonGradient, shape = RoundedCornerShape(16.dp))
+                    else Modifier
+                ),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text("Ingia", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Ingia", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (isEnabled) Color.White else Color.Gray)
         }
     }
 }
@@ -441,6 +445,7 @@ private fun PhoneLoginForm(
     var phone by remember { mutableStateOf("+255") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    val isEnabled = phone.length >= 10 && password.isNotBlank()
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Column {
@@ -508,15 +513,18 @@ private fun PhoneLoginForm(
 
         Button(
             onClick = { authViewModel.signInWithPhone(phone.trim(), password) },
-            enabled = phone.length >= 10 && password.isNotBlank(),
+            enabled = isEnabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
-                .background(buttonGradient, shape = RoundedCornerShape(16.dp)),
+                .then(
+                    if (isEnabled) Modifier.background(buttonGradient, shape = RoundedCornerShape(16.dp))
+                    else Modifier
+                ),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text("Ingia", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Ingia", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (isEnabled) Color.White else Color.Gray)
         }
     }
 }
