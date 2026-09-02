@@ -77,7 +77,7 @@ import com.google.android.gms.common.api.ApiException
 import com.maarifa.app.R
 import com.maarifa.app.data.model.UserRole
 import com.maarifa.app.di.maarifaContainer
-import com.maarifa.app.navigation.Routes
+import com.maarifa.app.navigation.Screen
 
 private enum class LoginTab { EMAIL, PHONE }
 
@@ -88,30 +88,34 @@ private fun Context.findActivity(): Activity? = when (this) {
 }
 
 @Composable
-fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
-    val container = maarifaContainer()
+fun LoginScreen(
+    navController: NavController,
+    authViewModel: AuthViewModel
+) {
+    val context = LocalContext.current
+    val container = maarifaContainer(context.applicationContext)
     val state by authViewModel.state.collectAsState()
     var tab by remember { mutableStateOf(LoginTab.EMAIL) }
-    val context = LocalContext.current
 
-    // Navigation and Session Logic
     LaunchedEffect(state.isSignedIn, state.profile, state.isSubmitting) {
         if (state.isSignedIn && !state.isSubmitting) {
             val dest = if (state.profile == null) {
-                Routes.REGISTER
+                Screen.Register.route
             } else if (state.profile!!.roleEnum == UserRole.TEACHER) {
-                Routes.TEACHER_HOME
+                Screen.TeacherHome.route
             } else {
-                Routes.STUDENT_HOME
+                Screen.StudentHome.route
             }
             navController.navigate(dest) {
-                popUpTo(Routes.WELCOME) { inclusive = true }
+                popUpTo(Screen.Login.route) { inclusive = true }
             }
         }
     }
 
     LaunchedEffect(state.otpVerificationId) {
-        state.otpVerificationId?.let { navController.navigate(Routes.otp(it)) }
+        state.otpVerificationId?.let { 
+            navController.navigate(Screen.OtpVerification.createRoute(it)) 
+        }
     }
 
     LaunchedEffect(state.otpAutoCredential) {
@@ -128,7 +132,6 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
         }
     }
 
-    // Brand Colors
     val primaryGreen = Color(0xFF1E7F55)
     val lightGreen = Color(0xFF34A853)
     val backgroundGradient = Brush.verticalGradient(
@@ -314,7 +317,7 @@ fun LoginScreen(authViewModel: AuthViewModel, navController: NavController) {
                                 fontWeight = FontWeight.Bold,
                                 color = primaryGreen,
                                 modifier = Modifier.clickable {
-                                    navController.navigate(Routes.REGISTER)
+                                    navController.navigate(Screen.Register.route)
                                 }
                             )
                         }
