@@ -26,6 +26,7 @@ data class AuthUiState(
     val profile: User? = null,
     val isSubmitting: Boolean = false,
     val errorMessage: String? = null,
+    val successMessage: String? = null,
     val otpVerificationId: String? = null,
     val otpAutoCredential: PhoneAuthCredential? = null
 )
@@ -69,7 +70,10 @@ class AuthViewModel(
         _state.value = _state.value.copy(errorMessage = null)
     }
 
-    // Kuingia kwa Barua Pepe + Password
+    fun clearSuccessMessage() {
+        _state.value = _state.value.copy(successMessage = null)
+    }
+
     fun signInWithEmail(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.signInWithEmail(email, password)) {
@@ -82,7 +86,6 @@ class AuthViewModel(
         }
     }
 
-    // Kuingia kwa Namba ya Simu + Password
     fun signInWithPhone(phoneNumber: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.signInWithPhone(phoneNumber, password)) {
@@ -95,7 +98,6 @@ class AuthViewModel(
         }
     }
 
-    // Usajili wa Email + Password
     fun registerWithEmail(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.registerWithEmail(email, password)) {
@@ -108,7 +110,6 @@ class AuthViewModel(
         }
     }
 
-    // Google Sign-In
     fun signInWithGoogleIdToken(idToken: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.signInWithGoogle(idToken)) {
@@ -121,7 +122,6 @@ class AuthViewModel(
         }
     }
 
-    // Kuomba OTP kwa ajili ya usajili wa namba ya simu
     fun requestOtp(activity: Activity, phoneNumber: String) {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         authService.requestOtp(activity, phoneNumber)
@@ -179,6 +179,22 @@ class AuthViewModel(
         }
     }
 
+    fun sendPasswordResetEmail(email: String) = viewModelScope.launch {
+        _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
+        try {
+            FirebaseAuth.getInstance().sendPasswordResetEmail(email)
+            _state.value = _state.value.copy(
+                isSubmitting = false,
+                successMessage = "Barua pepe ya kubadili nenosiri imetumwa."
+            )
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(
+                isSubmitting = false,
+                errorMessage = e.message ?: "Imeshindikana kutuma barua pepe ya kubadili nenosiri"
+            )
+        }
+    }
+
     private suspend fun loadProfileAfterAuth(uid: String) {
         if (uid.isBlank()) {
             _state.value = _state.value.copy(
@@ -217,7 +233,7 @@ class AuthViewModel(
         role: UserRole,
         region: String,
         schoolName: String?,
-        formClass: String
+        formClass: String? = null
     ) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
 
@@ -273,3 +289,4 @@ class AuthViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+
