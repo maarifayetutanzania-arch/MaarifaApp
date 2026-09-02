@@ -5,111 +5,93 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.ui.auth.AuthViewModel
-import com.maarifa.app.ui.auth.AuthViewModelFactory
 import com.maarifa.app.ui.auth.LoginScreen
 import com.maarifa.app.ui.auth.OtpVerificationScreen
 import com.maarifa.app.ui.auth.RegisterScreen
-import com.maarifa.app.ui.auth.SplashScreen
-import com.maarifa.app.ui.auth.WelcomeScreen
 import com.maarifa.app.ui.home.StudentHomeScreen
 import com.maarifa.app.ui.home.TeacherHomeScreen
 
+sealed class Screen(val route: String) {
+    object Login : Screen("login")
+    object Register : RegisterScreenRoute("register")
+    object OtpVerification : Screen("otp_verification/{phoneNumber}") {
+        fun createRoute(phoneNumber: String) = "otp_verification/$phoneNumber"
+    }
+    object StudentHome : Screen("student_home")
+    object TeacherHome : Screen("teacher_home")
+}
+
+open class RegisterScreenRoute(route: String) : Screen(route)
+
 @Composable
-fun MaarifaNavGraph(
-    navController: NavHostController = rememberNavController(),
-    startDestination: String = Routes.SPLASH,
-    authViewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(
-            authRepository = maarifaContainer().authRepository,
-            authService = maarifaContainer().authService
-        )
-    )
+fun NavGraph(
+    navController: NavHostController,
+    authViewModel: AuthViewModel = viewModel()
 ) {
-    val authState by authViewModel.state.collectAsState()
+    val state by authViewModel.state.collectAsState()
+
+    val startDestination = when {
+        state.isSignedIn && state.profile?.role == "TEACHER" -> Screen.TeacherHome.route
+        state.isSignedIn -> Screen.StudentHome.route
+        else -> Screen.Login.route
+    }
 
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
-        // ==================== AUTH ====================
-        composable(Routes.SPLASH) {
-            SplashScreen(
-                navController = navController,
+        composable(Screen.Login.route) {
+            LoginScreen(
+                onNavigateToRegister = { navController.navigate(Screen.Register.route) },
+                onLoginSuccess = {
+                    val target = if (state.profile?.role == "TEACHER") Screen.TeacherHome.route else Screen.StudentHome.route
+                    navController.navigate(target) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
                 authViewModel = authViewModel
             )
         }
 
-        composable(Routes.WELCOME) {
-            WelcomeScreen(navController = navController)
-        }
-
-        composable(Routes.LOGIN) {
-            LoginScreen(
-                authViewModel = authViewModel,
-                navController = navController
-            )
-        }
-
-        composable(Routes.REGISTER) {
-            val currentUid = authState.user?.uid
+        composable(Screen.Register.route) {
             RegisterScreen(
-                authViewModel = authViewModel,
-                navController = navController,
-                passedUid = currentUid
-            )
-        }
-
-        // OTP Screen
-        composable(
-            route = Routes.OTP,
-            arguments = listOf(
-                navArgument("verificationId") { 
-                    type = NavType.StringType
-                    defaultValue = ""
+                onNavigateToLogin = { navController.navigate(Screen.Login.route) },
+                onRegisterSuccess = {
+                    val target = if (state.profile?.role == "TEACHER") Screen.TeacherHome.route else Screen.StudentHome.route
+                    navController.navigate(target) {
+                        popUpTo(Screen.Register.route) { inclusive = true }
+                    }
                 },
-                navArgument("phone") { 
-                    type = NavType.StringType 
-                    defaultValue = "" 
-                }
-            )
-        ) { backStackEntry ->
-            val verificationId = backStackEntry.arguments?.getString("verificationId").orEmpty()
-            val phone = backStackEntry.arguments?.getString("phone").orEmpty()
-            
-            OtpVerificationScreen(
-                verificationId = verificationId,
-                phoneNumber = phone,
-                authViewModel = authViewModel,
-                navController = navController
+                onNavigateToOtp = { phone ->
+                    navController.navigate(Screen.OtpVerification.createRoute(phone))
+                },
+                authViewModel = authViewModel
             )
         }
 
-        // ==================== STUDENT ====================
-        composable(Routes.STUDENT_HOME) {
+        composable(Screen.OtpVerification.route) { backStackEntry ->
+            val phoneNumber = backStackEntry.arguments?.getString("phoneNumber").orEmpty()
+            OtpVerificationScreen(
+                phoneNumber = phoneNumber,
+                onVerificationSuccess = {
+                    val target = if (state.profile?.role == "TEACHER") Screen.TeacherHome.route else Screen.StudentHome.route
+                    navController.navigate(target) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                authViewModel = authViewModel
+            )
+        }
+
+        composable(Screen.StudentHome.route) {
             StudentHomeScreen(navController = navController, authViewModel = authViewModel)
         }
 
-        composable(Routes.SEARCH) { /* SearchScreen */ }
-        composable(Routes.SUBSCRIPTION) { /* SubscriptionScreen */ }
-        composable(Routes.DOWNLOADS) { /* DownloadsScreen */ }
-        composable(Routes.STUDENT_PROFILE) { /* StudentProfileScreen */ }
-
-        // ==================== TEACHER ====================
-        composable(Routes.TEACHER_HOME) {
+        composable(Screen.TeacherHome.route) {
             TeacherHomeScreen(navController = navController, authViewModel = authViewModel)
         }
-
-        composable(Routes.TEACHER_VERIFICATION_PENDING) { /* TeacherPendingScreen */ }
-        composable(Routes.UPLOAD_MATERIAL) { /* UploadMaterialScreen */ }
-        composable(Routes.TEACHER_MATERIALS) { /* TeacherMaterialsScreen */ }
-        composable(Routes.TEACHER_EARNINGS) { /* TeacherEarningsScreen */ }
-        composable(Routes.TEACHER_PROFILE) { /* TeacherProfileScreen */ }
     }
 }
