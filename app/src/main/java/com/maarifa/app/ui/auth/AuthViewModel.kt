@@ -57,7 +57,7 @@ class AuthViewModel(
                 )
                 is Resource.Error -> _state.value = _state.value.copy(
                     checkingSession = false,
-                    isSignedIn = false, // Zuiya mtumiaji kuelekezwa kwenye UI ya ndani bila profilu
+                    isSignedIn = false,
                     profile = null
                 )
                 Resource.Loading -> Unit
@@ -69,6 +69,7 @@ class AuthViewModel(
         _state.value = _state.value.copy(errorMessage = null)
     }
 
+    // Kuingia kwa Barua Pepe + Password
     fun signInWithEmail(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.signInWithEmail(email, password)) {
@@ -81,6 +82,20 @@ class AuthViewModel(
         }
     }
 
+    // Kuingia kwa Namba ya Simu + Password
+    fun signInWithPhone(phoneNumber: String, password: String) = viewModelScope.launch {
+        _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
+        when (val result = authRepository.signInWithPhone(phoneNumber, password)) {
+            is Resource.Success -> loadProfileAfterAuth(result.data)
+            is Resource.Error -> _state.value = _state.value.copy(
+                isSubmitting = false,
+                errorMessage = result.message
+            )
+            Resource.Loading -> Unit
+        }
+    }
+
+    // Usajili wa Email + Password
     fun registerWithEmail(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.registerWithEmail(email, password)) {
@@ -93,6 +108,7 @@ class AuthViewModel(
         }
     }
 
+    // Google Sign-In
     fun signInWithGoogleIdToken(idToken: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.signInWithGoogle(idToken)) {
@@ -105,6 +121,7 @@ class AuthViewModel(
         }
     }
 
+    // Kuomba OTP kwa ajili ya usajili wa namba ya simu
     fun requestOtp(activity: Activity, phoneNumber: String) {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         authService.requestOtp(activity, phoneNumber)
@@ -182,7 +199,7 @@ class AuthViewModel(
             )
             is Resource.Error -> _state.value = _state.value.copy(
                 isSubmitting = false,
-                isSignedIn = false, // Kama profilu haipo Firestore, nenda usajili badala ya kuset isSignedIn = true
+                isSignedIn = false,
                 profile = null,
                 otpVerificationId = null,
                 otpAutoCredential = null
