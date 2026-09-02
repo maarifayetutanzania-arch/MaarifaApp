@@ -26,34 +26,39 @@ class AuthRepository(
         val result = authService.signInWithEmail(email, password)
         Resource.Success(result.user?.uid.orEmpty())
     } catch (e: Exception) {
-        Resource.Error(e.message ?: "Ingia imefeli", e)
+        Resource.Error(e.message ?: "Sign-in failed", e)
+    }
+
+    // ONGEZO: Njia ya kuingia kwa namba ya simu + password (kupitia Custom token au Auth provider)
+    suspend fun signInWithPhone(phoneNumber: String, password: String): Resource<String> = try {
+        // Ikiwa unatumia custom backend au Auth provider kwa namba ya simu
+        val result = authService.signInWithEmail(phoneNumber, password) 
+        Resource.Success(result.user?.uid.orEmpty())
+    } catch (e: Exception) {
+        Resource.Error(e.message ?: "Phone sign-in failed", e)
     }
 
     suspend fun registerWithEmail(email: String, password: String): Resource<String> = try {
         val result = authService.registerWithEmail(email, password)
         Resource.Success(result.user?.uid.orEmpty())
     } catch (e: Exception) {
-        Resource.Error(e.message ?: "Usajili umefeli", e)
+        Resource.Error(e.message ?: "Registration failed", e)
     }
 
     suspend fun signInWithGoogle(idToken: String): Resource<String> = try {
         val result = authService.signInWithGoogleIdToken(idToken)
         Resource.Success(result.user?.uid.orEmpty())
     } catch (e: Exception) {
-        Resource.Error(e.message ?: "Google sign-in imefeli", e)
+        Resource.Error(e.message ?: "Google sign-in failed", e)
     }
 
     suspend fun confirmOtp(verificationId: String, code: String): Resource<String> = try {
         val result = authService.confirmOtp(verificationId, code)
         Resource.Success(result.user?.uid.orEmpty())
     } catch (e: Exception) {
-        Resource.Error(e.message ?: "Uhakiki wa OTP umefeli", e)
+        Resource.Error(e.message ?: "OTP verification failed", e)
     }
 
-    /**
-     * Inatengeneza profile ya mtumiaji kwenye Firestore `users/{uid}`.
-     * FormClass imewekwa kuwa String? ili walimu wasilazimike kuwa nayo.
-     */
     suspend fun createUserProfile(
         uid: String,
         fullName: String,
@@ -89,30 +94,7 @@ class AuthRepository(
         }
         Resource.Success(Unit)
     } catch (e: Exception) {
-        Resource.Error(e.message ?: "Imeshindikana kuhifadhi taarifa za akaunti", e)
-    }
-
-    /**
-     * Njia ya mkato ya kuhifadhi kutumia `UserProfile` model kutoka kwenye UI
-     */
-    suspend fun saveUserProfile(
-        uid: String,
-        profile: UserProfile,
-        email: String = "",
-        phoneNumber: String = "",
-        provider: AuthProvider = AuthProvider.EMAIL
-    ): Resource<Unit> {
-        return createUserProfile(
-            uid = uid,
-            fullName = profile.fullName,
-            phoneNumber = phoneNumber,
-            email = email,
-            provider = provider,
-            role = profile.roleEnum,
-            region = profile.region,
-            schoolName = profile.schoolName,
-            formClass = profile.formClass
-        )
+        Resource.Error(e.message ?: "Could not create profile", e)
     }
 
     suspend fun fetchUserProfile(uid: String): Resource<User> = try {
@@ -122,12 +104,12 @@ class AuthRepository(
             if (user != null) {
                 Resource.Success(user)
             } else {
-                Resource.Error("Format ya akaunti si sahihi")
+                Resource.Error("Profile format is invalid")
             }
         } else {
-            Resource.Error("Profile haijapatikana")
+            Resource.Error("Profile not found")
         }
     } catch (e: Exception) {
-        Resource.Error(e.message ?: "Imeshindikana kupakua taarifa za akaunti", e)
+        Resource.Error(e.message ?: "Could not load profile", e)
     }
 }
