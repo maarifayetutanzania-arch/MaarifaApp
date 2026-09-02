@@ -1,6 +1,8 @@
 package com.maarifa.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -8,7 +10,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.google.firebase.auth.FirebaseAuth
 import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.ui.auth.AuthViewModel
 import com.maarifa.app.ui.auth.AuthViewModelFactory
@@ -31,6 +32,8 @@ fun MaarifaNavGraph(
         )
     )
 ) {
+    val authState by authViewModel.state.collectAsState()
+
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -55,7 +58,7 @@ fun MaarifaNavGraph(
         }
 
         composable(Routes.REGISTER) {
-            val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+            val currentUid = authState.user?.uid
             RegisterScreen(
                 authViewModel = authViewModel,
                 navController = navController,
@@ -67,15 +70,18 @@ fun MaarifaNavGraph(
         composable(
             route = Routes.OTP,
             arguments = listOf(
-                navArgument("verificationId") { type = NavType.StringType },
+                navArgument("verificationId") { 
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
                 navArgument("phone") { 
                     type = NavType.StringType 
                     defaultValue = "" 
                 }
             )
         ) { backStackEntry ->
-            val verificationId = backStackEntry.arguments?.getString("verificationId") ?: ""
-            val phone = backStackEntry.arguments?.getString("phone") ?: ""
+            val verificationId = backStackEntry.arguments?.getString("verificationId").orEmpty()
+            val phone = backStackEntry.arguments?.getString("phone").orEmpty()
             
             OtpVerificationScreen(
                 verificationId = verificationId,
