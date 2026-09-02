@@ -93,7 +93,7 @@ fun LoginScreen(
     authViewModel: AuthViewModel
 ) {
     val context = LocalContext.current
-    val container = maarifaContainer(context.applicationContext)
+    val container = maarifaContainer()
     val state by authViewModel.state.collectAsState()
     var tab by remember { mutableStateOf(LoginTab.EMAIL) }
 
@@ -531,3 +531,4 @@ private fun PhoneLoginForm(
         }
     }
 }
+
