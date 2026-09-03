@@ -1,11 +1,20 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { useAdminAuth } from "../lib/AdminAuthContext";
+import { useNavigate } from "react-router-dom";
 
 export function LoginPage() {
   const { signIn, error, loading, firebaseUser, isAdmin, signOut } = useAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
+
+  // Kama mtumiaji tayari ni Admin na yupo signed in, mpeleke kwenye Dashboard moja kwa moja
+  useEffect(() => {
+    if (!loading && firebaseUser && isAdmin) {
+      navigate("/", { replace: true });
+    }
+  }, [firebaseUser, isAdmin, loading, navigate]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -14,6 +23,8 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       await signIn(email.trim(), password);
+      // Reelekeza baada ya signIn kufanikiwa
+      navigate("/", { replace: true });
     } catch {
       // Errors zote zinashughulikiwa na AdminAuthContext
     } finally {
@@ -39,7 +50,7 @@ export function LoginPage() {
         <div className="login-card">
           <h2>Not an admin account</h2>
           <p style={{ color: "var(--ink-soft)", fontSize: "0.88rem" }}>
-            {firebaseUser.email || "This account"} is signed in but doesn't have admin access on Maarifa 2026.
+            {firebaseUser.email || "This account"} is signed in but doesn't have admin access on Maarifa.
           </p>
           <button type="button" className="btn-primary" onClick={signOut}>
             Sign out
@@ -98,5 +109,4 @@ export function LoginPage() {
   );
 }
 
-// Export default ili iendane na import yoyote ndani ya App.tsx
 export default LoginPage;
