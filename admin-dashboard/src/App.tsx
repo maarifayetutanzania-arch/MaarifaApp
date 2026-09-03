@@ -10,7 +10,8 @@ import { PayoutsPage } from "./pages/PayoutsPage";
 
 // Kizuizi cha kuhakikisha Admin tu ndiye anayeingia (Protected Route)
 function ProtectedRoute() {
-  const { user, loading } = useAdminAuth();
+  // Tumetumia firebaseUser na isAdmin badala ya 'user' iliyokuwa undefined
+  const { firebaseUser, isAdmin, loading } = useAdminAuth();
 
   if (loading) {
     return (
@@ -20,7 +21,8 @@ function ProtectedRoute() {
     );
   }
 
-  if (!user) {
+  // Kama hajainia au si Admin, mpeleke kwenye login page
+  if (!firebaseUser || !isAdmin) {
     return <Navigate to="/login" replace />;
   }
 
