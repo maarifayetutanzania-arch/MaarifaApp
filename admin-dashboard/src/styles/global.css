@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   /* Refined "quiet premium" palette — matches app/.../ui/theme/Color.kt exactly */
   --forest: #1f6b45;
@@ -46,7 +50,7 @@ button {
   font-family: var(--font-body);
   cursor: pointer;
   border: none;
-  border-radius: 9px;
+  border-radius: 99px;
   font-weight: 600;
   font-size: 0.87rem;
   transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
