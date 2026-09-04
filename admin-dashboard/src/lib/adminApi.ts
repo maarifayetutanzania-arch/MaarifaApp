@@ -1,32 +1,74 @@
-import { httpsCallable } from "firebase/functions";
-import { functions } from "../firebase";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
-/**
- * All admin actions call server-side Cloud Functions in `functions/src/adminActions.ts`.
- * The backend re-verifies `role === "ADMIN"` before committing any state changes to Firestore.
- */
 export const adminApi = {
   // --- TEACHERS MANAGEMENT ---
-  approveTeacher: (teacherId: string) =>
-    httpsCallable<{ teacherId: string }, { success: boolean }>(functions, "adminApproveTeacher")({ teacherId }),
+  approveTeacher: async (teacherId: string) => {
+    const teacherRef = doc(db, "teachers", teacherId);
+    await updateDoc(teacherRef, {
+      verificationStatus: "APPROVED",
+      updatedAt: new Date().toISOString()
+    });
+    return { success: true };
+  },
 
-  rejectTeacher: (teacherId: string, notes: string) =>
-    httpsCallable<{ teacherId: string; notes: string }, { success: boolean }>(functions, "adminRejectTeacher")({ teacherId, notes }),
+  rejectTeacher: async (teacherId: string, notes: string) => {
+    const teacherRef = doc(db, "teachers", teacherId);
+    await updateDoc(teacherRef, {
+      verificationStatus: "REJECTED",
+      rejectionReason: notes,
+      updatedAt: new Date().toISOString()
+    });
+    return { success: true };
+  },
 
   // --- CONTENT & MATERIALS MANAGEMENT ---
-  approveMaterial: (materialId: string) =>
-    httpsCallable<{ materialId: string }, { success: boolean }>(functions, "adminApproveMaterial")({ materialId }),
+  approveMaterial: async (materialId: string) => {
+    const materialRef = doc(db, "materials", materialId);
+    await updateDoc(materialRef, {
+      status: "APPROVED",
+      updatedAt: new Date().toISOString()
+    });
+    return { success: true };
+  },
 
-  rejectMaterial: (materialId: string, reason: string) =>
-    httpsCallable<{ materialId: string; reason: string }, { success: boolean }>(functions, "adminRejectMaterial")({ materialId, reason }),
+  rejectMaterial: async (materialId: string, reason: string) => {
+    const materialRef = doc(db, "materials", materialId);
+    await updateDoc(materialRef, {
+      status: "REJECTED",
+      rejectionReason: reason,
+      updatedAt: new Date().toISOString()
+    });
+    return { success: true };
+  },
 
   // --- PAYOUTS & TRANSACTIONS MANAGEMENT ---
-  approvePayout: (payoutId: string) =>
-    httpsCallable<{ payoutId: string }, { success: boolean }>(functions, "adminApprovePayout")({ payoutId }),
+  approvePayout: async (payoutId: string) => {
+    const payoutRef = doc(db, "payouts", payoutId);
+    await updateDoc(payoutRef, {
+      status: "APPROVED",
+      updatedAt: new Date().toISOString()
+    });
+    return { success: true };
+  },
 
-  markPayoutPaid: (payoutId: string, transactionId: string) =>
-    httpsCallable<{ payoutId: string; transactionId: string }, { success: boolean }>(functions, "adminMarkPayoutPaid")({ payoutId, transactionId }),
+  markPayoutPaid: async (payoutId: string, transactionId: string) => {
+    const payoutRef = doc(db, "payouts", payoutId);
+    await updateDoc(payoutRef, {
+      status: "PAID",
+      transactionId: transactionId,
+      paidAt: new Date().toISOString()
+    });
+    return { success: true };
+  },
 
-  flagPayoutException: (payoutId: string, notes: string) =>
-    httpsCallable<{ payoutId: string; notes: string }, { success: boolean }>(functions, "adminFlagPayoutException")({ payoutId, notes }),
+  flagPayoutException: async (payoutId: string, notes: string) => {
+    const payoutRef = doc(db, "payouts", payoutId);
+    await updateDoc(payoutRef, {
+      status: "EXCEPTION",
+      exceptionNotes: notes,
+      updatedAt: new Date().toISOString()
+    });
+    return { success: true };
+  },
 };
