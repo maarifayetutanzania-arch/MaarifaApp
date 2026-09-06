@@ -1,15 +1,7 @@
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { COLLECTIONS } from "./admin";
 import { notifyUser } from "./notifications";
 
-/**
- * Fires whenever the admin dashboard changes a material's status. Handles both the
- * teacher-facing approval/rejection notification (PRD 8.9) and the "new content"
- * notification broadcast implicitly by materials becoming visible in the library
- * (the library itself is realtime, so students just see it appear — no fan-out spam
- * notification is sent to every student for every new upload).
- */
-export const onMaterialStatusChanged = onDocumentUpdated(`${COLLECTIONS.MATERIALS}/{materialId}`, async (event) => {
+export const onMaterialStatusChanged = onDocumentUpdated("materials/{materialId}", async (event) => {
   const before = event.data?.before?.data();
   const after = event.data?.after?.data();
   if (!before || !after || before.status === after.status) return;
@@ -26,8 +18,7 @@ export const onMaterialStatusChanged = onDocumentUpdated(`${COLLECTIONS.MATERIAL
   }
 });
 
-/** Notifies a teacher the moment the admin dashboard verifies (or rejects) their application. */
-export const onTeacherVerificationChanged = onDocumentUpdated(`${COLLECTIONS.TEACHERS}/{teacherId}`, async (event) => {
+export const onTeacherVerificationChanged = onDocumentUpdated("teachers/{teacherId}", async (event) => {
   const before = event.data?.before?.data();
   const after = event.data?.after?.data();
   if (!before || !after || before.verificationStatus === after.verificationStatus) return;
