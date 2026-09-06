@@ -8,12 +8,9 @@ export function AdminLayout() {
 
   if (loading) {
     return (
-      <div className="h-screen w-full bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-          <p className="text-sm font-medium text-gray-500">
-            Inahakiki haki za Admin...
-          </p>
+      <div className="login-shell">
+        <div className="login-card" style={{ textCenter: "center", alignItems: "center" }}>
+          <p style={{ margin: 0, fontWeight: 500 }}>Inahakiki haki za Admin...</p>
         </div>
       </div>
     );
@@ -24,15 +21,10 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="h-screen w-full bg-gray-50 flex overflow-hidden">
-      {/* Sidebar navigation */}
+    <div className="app-shell">
       <Sidebar />
-
-      {/* Main content body (Marekebisho ya kuzuia kuvimba kwa screen) */}
-      <main className="flex-1 min-w-0 h-full overflow-y-auto p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto w-full">
-          <Outlet />
-        </div>
+      <main className="main">
+        <Outlet />
       </main>
     </div>
   );
