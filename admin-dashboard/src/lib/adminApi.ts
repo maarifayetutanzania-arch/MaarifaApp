@@ -1,5 +1,5 @@
 import { httpsCallable } from "firebase/functions";
-import { functions } from "../firebase"; // Path imerekebishwa kwenda folder la juu (src/firebase.ts)
+import { functions } from "../firebase";
 
 export const adminApi = {
   // --- TEACHERS MANAGEMENT ---
