@@ -4,10 +4,38 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#F2A93B"
-        android:pathData="M54,30 C46,24 34,22 24,24 L24,74 C34,72 46,74 54,80 C62,74 74,72 84,74 L84,24 C74,22 62,24 54,30 Z" />
-    <path
-        android:fillColor="#0A5636"
-        android:pathData="M54,30 L54,80" />
+
+    <group
+        android:scaleX="0.75"
+        android:scaleY="0.75"
+        android:translateX="13.5"
+        android:translateY="13.5">
+
+        <!-- M Shape & Crown Lines -->
+        <path
+            android:pathData="M 18,72 C 22,60 38,32 42,28 C 47,22 52,32 56,40 C 60,32 68,22 72,18 C 76,22 84,55 88,72"
+            android:strokeColor="#E5C158"
+            android:strokeWidth="4.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"/>
+
+        <!-- Diamond Flame above top right peak -->
+        <path
+            android:pathData="M 72,8 L 75.5,13 L 72,18 L 68.5,13 Z"
+            android:fillColor="#E5C158"/>
+
+        <!-- Open Book Top Curve -->
+        <path
+            android:pathData="M 24,70 Q 53,63 53,75 Q 53,63 82,70"
+            android:strokeColor="#E5C158"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"/>
+
+        <!-- Open Book Bottom Curve -->
+        <path
+            android:pathData="M 26,76 Q 53,70 53,82 Q 53,70 80,76"
+            android:strokeColor="#E5C158"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"/>
+    </group>
 </vector>
