@@ -1,5 +1,6 @@
 package com.maarifa.app.data.repository
 
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.maarifa.app.data.model.AccountStatus
 import com.maarifa.app.data.model.AuthProvider
@@ -21,6 +22,24 @@ class AuthRepository(
 
     fun signOut() = authService.signOut()
 
+    suspend fun sendEmailVerification(): Resource<Unit> = try {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+            ?: throw Exception("Hakuna mtumiaji aliyepingia")
+        currentUser.sendEmailVerification().await()
+        Resource.Success(Unit)
+    } catch (e: Exception) {
+        Resource.Error(e.message ?: "Kutuma email ya uhakiki kumeshindikana", e)
+    }
+
+    suspend fun checkIsEmailVerified(): Resource<Boolean> = try {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+            ?: throw Exception("Hakuna mtumiaji aliyepingia")
+        currentUser.reload().await()
+        Resource.Success(currentUser.isEmailVerified)
+    } catch (e: Exception) {
+        Resource.Error(e.message ?: "Kuangalia uthibitisho kumeshindikana", e)
+    }
+
     suspend fun signInWithEmail(email: String, password: String): Resource<String> = try {
         val result = authService.signInWithEmail(email, password)
         Resource.Success(result.user?.uid.orEmpty())
@@ -37,7 +56,9 @@ class AuthRepository(
 
     suspend fun registerWithEmail(email: String, password: String): Resource<String> = try {
         val result = authService.registerWithEmail(email, password)
-        Resource.Success(result.user?.uid.orEmpty())
+        val uid = result.user?.uid.orEmpty()
+        sendEmailVerification()
+        Resource.Success(uid)
     } catch (e: Exception) {
         Resource.Error(e.message ?: "Registration failed", e)
     }
@@ -110,4 +131,3 @@ class AuthRepository(
         Resource.Error(e.message ?: "Could not load profile", e)
     }
 }
-
