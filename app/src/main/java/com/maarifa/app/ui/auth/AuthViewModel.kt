@@ -23,6 +23,8 @@ import kotlinx.coroutines.launch
 data class AuthUiState(
     val checkingSession: Boolean = true,
     val isSignedIn: Boolean = false,
+    val isEmailVerified: Boolean = false,
+    val isAwaitingEmailVerification: Boolean = false,
     val profile: User? = null,
     val isSubmitting: Boolean = false,
     val errorMessage: String? = null,
@@ -49,16 +51,21 @@ class AuthViewModel(
             _state.value = _state.value.copy(checkingSession = false, isSignedIn = false)
             return
         }
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val isVerified = currentUser?.isEmailVerified ?: false
+
         viewModelScope.launch {
             when (val result = authRepository.fetchUserProfile(uid)) {
                 is Resource.Success -> _state.value = _state.value.copy(
                     checkingSession = false,
                     isSignedIn = true,
+                    isEmailVerified = isVerified,
                     profile = result.data
                 )
                 is Resource.Error -> _state.value = _state.value.copy(
                     checkingSession = false,
-                    isSignedIn = true, // Yupo logged in Firebase Auth hata kama hana Firestore profile
+                    isSignedIn = true,
+                    isEmailVerified = isVerified,
                     profile = null
                 )
                 Resource.Loading -> Unit
@@ -72,6 +79,105 @@ class AuthViewModel(
 
     fun clearSuccessMessage() {
         _state.value = _state.value.copy(successMessage = null)
+    }
+
+    fun registerWithEmail(email: String, password: String) = viewModelScope.launch {
+        _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
+        when (val result = authRepository.registerWithEmail(email, password)) {
+            is Resource.Success -> {
+                _state.value = _state.value.copy(
+                    isSubmitting = false,
+                    isAwaitingEmailVerification = true
+                )
+            }
+            is Resource.Error -> _state.value = _state.value.copy(
+                isSubmitting = false,
+                errorMessage = result.message
+            )
+            Resource.Loading -> Unit
+        }
+    }
+
+    fun verifyAndCompleteRegistration(
+        fullName: String,
+        phoneNumber: String,
+        email: String,
+        role: UserRole,
+        region: String,
+        schoolName: String?,
+        formClass: String?,
+        onSuccess: () -> Unit
+    ) = viewModelScope.launch {
+        _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
+        when (val checkResult = authRepository.checkIsEmailVerified()) {
+            is Resource.Success -> {
+                if (checkResult.data) {
+                    val uid = authRepository.currentUserId 
+                        ?: FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+                    
+                    val profileResult = authRepository.createUserProfile(
+                        uid = uid,
+                        fullName = fullName,
+                        phoneNumber = phoneNumber,
+                        email = email,
+                        provider = AuthProvider.EMAIL,
+                        role = role,
+                        region = region,
+                        schoolName = schoolName,
+                        formClass = formClass
+                    )
+
+                    when (profileResult) {
+                        is Resource.Success -> {
+                            loadProfileAfterAuth(uid)
+                            _state.value = _state.value.copy(
+                                isAwaitingEmailVerification = false,
+                                isEmailVerified = true
+                            )
+                            onSuccess()
+                        }
+                        is Resource.Error -> {
+                            _state.value = _state.value.copy(
+                                isSubmitting = false,
+                                errorMessage = profileResult.message
+                            )
+                        }
+                        Resource.Loading -> Unit
+                    }
+                } else {
+                    _state.value = _state.value.copy(
+                        isSubmitting = false,
+                        errorMessage = "Bado hujathibitisha barua pepe yako. Fungua barua pepe uliyotumiwa kisha ubonyeze link ya uhakiki."
+                    )
+                }
+            }
+            is Resource.Error -> {
+                _state.value = _state.value.copy(
+                    isSubmitting = false,
+                    errorMessage = checkResult.message
+                )
+            }
+            Resource.Loading -> Unit
+        }
+    }
+
+    fun resendVerificationEmail() = viewModelScope.launch {
+        _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
+        when (val result = authRepository.sendEmailVerification()) {
+            is Resource.Success -> {
+                _state.value = _state.value.copy(
+                    isSubmitting = false,
+                    successMessage = "Barua pepe ya uhakiki imetumwa tena! Angalia Inbox au Spam."
+                )
+            }
+            is Resource.Error -> {
+                _state.value = _state.value.copy(
+                    isSubmitting = false,
+                    errorMessage = result.message
+                )
+            }
+            Resource.Loading -> Unit
+        }
     }
 
     fun signInWithEmail(email: String, password: String) = viewModelScope.launch {
@@ -89,18 +195,6 @@ class AuthViewModel(
     fun signInWithPhone(phoneNumber: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
         when (val result = authRepository.signInWithPhone(phoneNumber, password)) {
-            is Resource.Success -> loadProfileAfterAuth(result.data)
-            is Resource.Error -> _state.value = _state.value.copy(
-                isSubmitting = false,
-                errorMessage = result.message
-            )
-            Resource.Loading -> Unit
-        }
-    }
-
-    fun registerWithEmail(email: String, password: String) = viewModelScope.launch {
-        _state.value = _state.value.copy(isSubmitting = true, errorMessage = null)
-        when (val result = authRepository.registerWithEmail(email, password)) {
             is Resource.Success -> loadProfileAfterAuth(result.data)
             is Resource.Error -> _state.value = _state.value.copy(
                 isSubmitting = false,
@@ -205,17 +299,22 @@ class AuthViewModel(
             return
         }
 
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val isVerified = currentUser?.isEmailVerified ?: false
+
         when (val result = authRepository.fetchUserProfile(uid)) {
             is Resource.Success -> _state.value = _state.value.copy(
                 isSubmitting = false,
                 isSignedIn = true,
+                isEmailVerified = isVerified,
                 profile = result.data,
                 otpVerificationId = null,
                 otpAutoCredential = null
             )
             is Resource.Error -> _state.value = _state.value.copy(
                 isSubmitting = false,
-                isSignedIn = true, // User amefanikiwa ku-authenticate, awe na uwezo wa kwenda kujaza profile
+                isSignedIn = true,
+                isEmailVerified = isVerified,
                 profile = null,
                 otpVerificationId = null,
                 otpAutoCredential = null
