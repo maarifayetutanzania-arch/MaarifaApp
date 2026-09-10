@@ -4,14 +4,18 @@ import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.maarifa.app.data.model.AuthProvider
+import androidx.compose.ui.unit.sp
 import com.maarifa.app.data.model.UserRole
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,196 +41,268 @@ fun RegisterScreen(
     var roleExpanded by remember { mutableStateOf(false) }
     var classExpanded by remember { mutableStateOf(false) }
 
-    // 1. Mfumo ukishakuwa Authenticated kwenye Firebase Auth:
-    LaunchedEffect(state.isSignedIn, state.profile) {
-        if (state.isSignedIn) {
-            if (state.profile == null) {
-                // Kama bado profile haijaundwa Firestore, itengeneze kwa kutumia taarifa za fomu
-                authViewModel.completeRegistration(
-                    uidParam = null,
-                    fullName = fullName,
-                    phoneNumber = phoneNumber,
-                    email = email,
-                    provider = AuthProvider.EMAIL,
-                    role = selectedRole,
-                    region = region,
-                    schoolName = schoolName.ifBlank { null },
-                    formClass = if (selectedRole == UserRole.STUDENT) formClass else null
-                )
-            } else {
-                // Profile tayari ipo Firestore! Mpeleke mtumiaji Home Screen
-                onRegisterSuccess()
-            }
-        }
-    }
-
-    // 2. Mfumo wa simu (OTP Navigation)
     LaunchedEffect(state.otpVerificationId) {
         if (!state.otpVerificationId.isNullOrBlank()) {
             onNavigateToOtp(phoneNumber)
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Tengeneza Akaunti MPYA", style = MaterialTheme.typography.headlineMedium)
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = fullName,
-            onValueChange = { fullName = it },
-            label = { Text("Jina Bufe (Full Name)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Barua Pepe (Email)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = phoneNumber,
-            onValueChange = { phoneNumber = it },
-            label = { Text("Namba ya Simu (+255...)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Nenosiri (Password)") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = region,
-            onValueChange = { region = it },
-            label = { Text("Mkoa (Region)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = schoolName,
-            onValueChange = { schoolName = it },
-            label = { Text("Jina la Shule (Optional)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Role Dropdown
-        ExposedDropdownMenuBox(
-            expanded = roleExpanded,
-            onExpandedChange = { roleExpanded = !roleExpanded }
+    if (state.isAwaitingEmailVerification) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            OutlinedTextField(
-                value = selectedRole.name,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Aina ya Akaunti") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = roleExpanded) },
-                modifier = Modifier.menuAnchor().fillMaxWidth()
+            Icon(
+                imageVector = Icons.Default.MarkEmailUnread,
+                contentDescription = null,
+                modifier = Modifier.size(80.dp),
+                tint = MaterialTheme.colorScheme.primary
             )
-            ExposedDropdownMenu(
-                expanded = roleExpanded,
-                onDismissRequest = { roleExpanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Mwanafunzi (STUDENT)") },
-                    onClick = {
-                        selectedRole = UserRole.STUDENT
-                        roleExpanded = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Mwalimu (TEACHER)") },
-                    onClick = {
-                        selectedRole = UserRole.TEACHER
-                        roleExpanded = false
-                    }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Thibitisha Barua Pepe Yako",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Tumetuma barua pepe ya uhakiki kwenda:\n$email\n\nTafadhali fungua barua pepe yako na ubonyeze kiungo (link) cha uhakiki kisha ubonyeze kitufe hapa chini kuendelea.",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            state.errorMessage?.let { err ->
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = err,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center
                 )
             }
-        }
 
-        if (selectedRole == UserRole.STUDENT) {
+            state.successMessage?.let { msg ->
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = msg,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    authViewModel.verifyAndCompleteRegistration(
+                        fullName = fullName,
+                        phoneNumber = phoneNumber,
+                        email = email,
+                        role = selectedRole,
+                        region = region,
+                        schoolName = schoolName.ifBlank { null },
+                        formClass = if (selectedRole == UserRole.STUDENT) formClass else null,
+                        onSuccess = onRegisterSuccess
+                    )
+                },
+                enabled = !state.isSubmitting,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                if (state.isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Nimeshathibitisha")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            TextButton(
+                onClick = { authViewModel.resendVerificationEmail() },
+                enabled = !state.isSubmitting
+            ) {
+                Text("Hujapata barua pepe? Tuma tena")
+            }
+        }
+    } else {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Tengeneza Akaunti MPYA", style = MaterialTheme.typography.headlineMedium)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = fullName,
+                onValueChange = { fullName = it },
+                label = { Text("Jina Bufe (Full Name)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Barua Pepe (Email)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = phoneNumber,
+                onValueChange = { phoneNumber = it },
+                label = { Text("Namba ya Simu (+255...)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Nenosiri (Password)") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = region,
+                onValueChange = { region = it },
+                label = { Text("Mkoa (Region)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = schoolName,
+                onValueChange = { schoolName = it },
+                label = { Text("Jina la Shule (Optional)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             ExposedDropdownMenuBox(
-                expanded = classExpanded,
-                onExpandedChange = { classExpanded = !classExpanded }
+                expanded = roleExpanded,
+                onExpandedChange = { roleExpanded = !roleExpanded }
             ) {
                 OutlinedTextField(
-                    value = formClass,
+                    value = selectedRole.name,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Kidato (Form)") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = classExpanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                    label = { Text("Aina ya Akaunti") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = roleExpanded) },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
-                    expanded = classExpanded,
-                    onDismissRequest = { classExpanded = false }
+                    expanded = roleExpanded,
+                    onDismissRequest = { roleExpanded = false }
                 ) {
-                    listOf("Form I", "Form II", "Form III", "Form IV", "Form V", "Form VI").forEach { f ->
-                        DropdownMenuItem(
-                            text = { Text(f) },
-                            onClick = {
-                                formClass = f
-                                classExpanded = false
-                            }
-                        )
+                    DropdownMenuItem(
+                        text = { Text("Mwanafunzi (STUDENT)") },
+                        onClick = {
+                            selectedRole = UserRole.STUDENT
+                            roleExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Mwalimu (TEACHER)") },
+                        onClick = {
+                            selectedRole = UserRole.TEACHER
+                            roleExpanded = false
+                        }
+                    )
+                }
+            }
+
+            if (selectedRole == UserRole.STUDENT) {
+                Spacer(modifier = Modifier.height(8.dp))
+                ExposedDropdownMenuBox(
+                    expanded = classExpanded,
+                    onExpandedChange = { classExpanded = !classExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = formClass,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Kidato (Form)") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = classExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = classExpanded,
+                        onDismissRequest = { classExpanded = false }
+                    ) {
+                        listOf("Form I", "Form II", "Form III", "Form IV", "Form V", "Form VI").forEach { f ->
+                            DropdownMenuItem(
+                                text = { Text(f) },
+                                onClick = {
+                                    formClass = f
+                                    classExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        state.errorMessage?.let { err ->
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = err, color = MaterialTheme.colorScheme.error)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                if (email.isNotBlank() && password.isNotBlank()) {
-                    authViewModel.registerWithEmail(email, password)
-                } else if (phoneNumber.isNotBlank() && context is Activity) {
-                    authViewModel.requestOtp(context, phoneNumber)
-                }
-            },
-            enabled = !state.isSubmitting && fullName.isNotBlank() && region.isNotBlank(),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (state.isSubmitting) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp))
-            } else {
-                Text("Sajili Akaunti")
+            state.errorMessage?.let { err ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = err, color = MaterialTheme.colorScheme.error)
             }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        TextButton(onClick = onNavigateToLogin) {
-            Text("Tayari una akaunti? Ingia hapa")
+            Button(
+                onClick = {
+                    if (email.isNotBlank() && password.isNotBlank()) {
+                        authViewModel.registerWithEmail(email, password)
+                    } else if (phoneNumber.isNotBlank() && context is Activity) {
+                        authViewModel.requestOtp(context, phoneNumber)
+                    }
+                },
+                enabled = !state.isSubmitting && fullName.isNotBlank() && region.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (state.isSubmitting) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                } else {
+                    Text("Sajili Akaunti")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TextButton(onClick = onNavigateToLogin) {
+                Text("Tayari una akaunti? Ingia hapa")
+            }
         }
     }
 }
