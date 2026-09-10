@@ -35,6 +35,7 @@ class AuthRepository(
         val currentUser = FirebaseAuth.getInstance().currentUser
             ?: throw Exception("Hakuna mtumiaji aliyepingia")
         currentUser.reload().await()
+        currentUser.getIdToken(true).await() // Tumefanya Token Refresh hapa ili kuzuia PERMISSION_DENIED
         Resource.Success(currentUser.isEmailVerified)
     } catch (e: Exception) {
         Resource.Error(e.message ?: "Kuangalia uthibitisho kumeshindikana", e)
