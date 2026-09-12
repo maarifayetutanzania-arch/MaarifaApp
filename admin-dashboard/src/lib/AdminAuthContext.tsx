@@ -37,20 +37,21 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         const snap = await getDoc(doc(db, "users", user.uid));
         
         if (snap.exists()) {
-          const data = snap.data() as AppUser;
-          // Inakagua bila kujali kama ni "ADMIN", "admin", au "Admin"
+          const data = snap.data() as AppUser & { isAdmin?: boolean };
           const userRole = String(data.role || (data as any).roleEnum || "").toUpperCase();
+          const hasAdminFlag = data.isAdmin === true;
 
-          if (userRole === "ADMIN") {
-            setAdminProfile(data);
+          // Inakubali ikiwa role ni "ADMIN" AU ikiwa field ya isAdmin ni true
+          if (userRole === "ADMIN" || hasAdminFlag) {
+            setAdminProfile(data as AppUser);
             setError(null);
           } else {
             setAdminProfile(null);
-            setError(`Akaunti ya ${user.email} haina idhini ya ADMIN (Role iliyopo: "${data.role || 'Haina role'}").`);
+            setError(`Akaunti ya ${user.email} haina idhini ya ADMIN.`);
           }
         } else {
           setAdminProfile(null);
-          setError(`Document ya mtumiaji haijapatikana kwenye Firestore (users/${user.uid}). Create document hii kwanza.`);
+          setError(`Document ya mtumiaji haijapatikana kwenye Firestore (users/${user.uid}).`);
         }
       } catch (err: any) {
         console.error("Error fetching admin profile:", err);
@@ -87,7 +88,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     setError(null);
   };
 
-  const isAdmin = adminProfile !== null && String(adminProfile.role).toUpperCase() === "ADMIN";
+  // Kagua ya mwisho: Inakagua kama adminProfile ipo na ama role ni ADMIN au isAdmin ni true
+  const isAdmin = adminProfile !== null && (
+    String(adminProfile.role || "").toUpperCase() === "ADMIN" ||
+    (adminProfile as any).isAdmin === true
+  );
 
   return (
     <AdminAuthContext.Provider
