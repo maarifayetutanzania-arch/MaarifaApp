@@ -25,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -275,23 +276,58 @@ fun TeacherEarningsScreen() {
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Ujumbe wa Maoni (Success au Error)
+                        if (state.saveSuccessMessage != null) {
+                            Text(
+                                text = state.saveSuccessMessage!!,
+                                color = primaryGreen,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+                        if (state.errorMessage != null) {
+                            Text(
+                                text = state.errorMessage!!,
+                                color = Color.Red,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
 
                         // Save Button
                         Button(
                             onClick = {
-                                // Event ya kuhifadhi taarifa kwenye ViewModel/Firestore
-                                // vm.savePaymentMethod(selectedMethod, selectedProvider, accountNumber)
+                                if (accountNumber.isNotBlank()) {
+                                    vm.savePaymentInfo(
+                                        method = selectedMethod,
+                                        provider = selectedProvider,
+                                        accountNumber = accountNumber
+                                    )
+                                }
                             },
+                            enabled = accountNumber.isNotBlank() && !state.isSavingPayment,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = primaryGreen)
                         ) {
-                            Text(
-                                text = "Hifadhi Taarifa za Malipo",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            if (state.isSavingPayment) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text(
+                                    text = "Hifadhi Taarifa za Malipo",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                 }
