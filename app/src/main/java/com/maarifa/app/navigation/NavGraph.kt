@@ -1,8 +1,15 @@
 package com.maarifa.app.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -19,6 +26,7 @@ import com.maarifa.app.ui.student.StudentHomeScreen
 import com.maarifa.app.ui.teacher.TeacherHomeScreen
 
 sealed class Screen(val route: String) {
+    data object Splash : Screen("splash") // Imewekwa hapa
     data object Login : Screen("login")
     data object Register : Screen("register")
     data object OtpVerification : Screen("otp_verification/{phoneNumber}") {
@@ -40,16 +48,34 @@ fun NavGraph(
 ) {
     val state by authViewModel.state.collectAsState()
 
-    val startDestination = when {
-        state.isSignedIn && state.profile?.role == "TEACHER" -> Screen.TeacherHome.route
-        state.isSignedIn -> Screen.StudentHome.route
-        else -> Screen.Login.route
-    }
-
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = Screen.Splash.route // Inaanza kwenye Splash badala ya Login
     ) {
+        // 1. Splash Screen
+        composable(Screen.Splash.route) {
+            LaunchedEffect(state.checkingSession, state.isSignedIn, state.isEmailVerified, state.profile) {
+                if (!state.checkingSession) {
+                    val target = when {
+                        state.isSignedIn && state.isEmailVerified && state.profile?.role == "TEACHER" -> Screen.TeacherHome.route
+                        state.isSignedIn && state.isEmailVerified -> Screen.StudentHome.route
+                        state.isSignedIn && !state.isEmailVerified -> Screen.Register.route
+                        else -> Screen.Login.route
+                    }
+                    navController.navigate(target) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        }
+
         composable(Screen.Login.route) {
             LoginScreen(
                 navController = navController,
