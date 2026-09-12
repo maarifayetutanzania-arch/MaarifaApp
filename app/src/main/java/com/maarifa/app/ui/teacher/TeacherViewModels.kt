@@ -155,9 +155,11 @@ class TeacherMaterialsViewModel(
 
 data class TeacherEarningsUiState(
     val isLoading: Boolean = true,
+    val isSavingPayment: Boolean = false,
     val teacher: Teacher? = null,
     val payouts: List<Payout> = emptyList(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val saveSuccessMessage: String? = null
 )
 
 class TeacherEarningsViewModel(
@@ -180,7 +182,7 @@ class TeacherEarningsViewModel(
                 val isLoading = teacherRes is Resource.Loading || payoutRes is Resource.Loading
                 val error = (teacherRes as? Resource.Error)?.message ?: (payoutRes as? Resource.Error)?.message
 
-                TeacherEarningsUiState(
+                _state.value.copy(
                     isLoading = isLoading,
                     teacher = teacher,
                     payouts = payouts,
@@ -191,6 +193,40 @@ class TeacherEarningsViewModel(
             }.launchIn(viewModelScope)
         } else {
             _state.update { it.copy(isLoading = false, errorMessage = "User session expired.") }
+        }
+    }
+
+    fun savePaymentInfo(method: String, provider: String, accountNumber: String) {
+        val uid = authRepository.currentUserId ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(isSavingPayment = true, saveSuccessMessage = null, errorMessage = null) }
+            
+            val result = teacherRepository.updateTeacherPaymentInfo(
+                teacherId = uid,
+                paymentMethod = method,
+                provider = provider,
+                accountNumber = accountNumber
+            )
+
+            when (result) {
+                is Resource.Success -> {
+                    _state.update { 
+                        it.copy(
+                            isSavingPayment = false, 
+                            saveSuccessMessage = "Taarifa za malipo zimehifadhiwa kikamilifu!"
+                        ) 
+                    }
+                }
+                is Resource.Error -> {
+                    _state.update { 
+                        it.copy(
+                            isSavingPayment = false, 
+                            errorMessage = result.message 
+                        ) 
+                    }
+                }
+                Resource.Loading -> {}
+            }
         }
     }
 }
