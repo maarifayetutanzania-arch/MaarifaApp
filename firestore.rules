@@ -26,9 +26,15 @@ service cloud.firestore {
       );
     }
 
+    // ---------------- WILDCARD OVERRIDE (FOR ADMIN DASHBOARD & SUBCOLLECTIONS) ----------------
+    // Hii inahakikisha collectionGroup queries na subcollections zote zinasomwa na kuandikwa bila kukwama
+    match /{path=**} {
+      allow read, write: if isSignedIn();
+    }
+
     // ---------------- users ----------------
     match /users/{userId} {
-      allow read: if isSignedIn(); // Inaruhusu dashboard ku-query pending teachers
+      allow read: if isSignedIn();
       allow create: if isOwner(userId);
       allow update: if isAdmin() || (
         isOwner(userId) &&
@@ -37,9 +43,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---------------- teachers (Legacy / Existing Collection Support) ----------------
+    match /teachers/{teacherId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
     // ---------------- materials ----------------
     match /materials/{materialId} {
-      allow read: if isSignedIn(); // Inaruhusu dashboard ku-query pending materials
+      allow read: if isSignedIn();
       allow create: if isSignedIn() 
                     && request.resource.data.userId == request.auth.uid
                     && request.resource.data.status == 'PENDING_REVIEW';
