@@ -9,14 +9,22 @@ import { Teacher, Material, Payout } from "../types";
 export function Sidebar() {
   const { signOut, adminProfile } = useAdminAuth();
 
+  // Query iliyorekebishwa kusoma collection ya 'users' na kuchuja walimu wenye status ya 'PENDING'
   const pendingTeachersQuery = useMemo(
-    () => query(collection(db, "teachers"), where("verificationStatus", "==", "PENDING")),
+    () =>
+      query(
+        collection(db, "users"),
+        where("role", "==", "TEACHER"),
+        where("status", "==", "PENDING")
+      ),
     []
   );
+
   const pendingMaterialsQuery = useMemo(
     () => query(collection(db, "materials"), where("status", "==", "PENDING_REVIEW")),
     []
   );
+
   const pendingPayoutsQuery = useMemo(
     () => query(collection(db, "payouts"), where("status", "==", "GENERATED")),
     []
