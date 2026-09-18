@@ -1,5 +1,5 @@
 import { Fragment, useState, useMemo } from "react";
-import { collection, orderBy, query } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { useCollection } from "../lib/useCollection";
 import { StatusPill, EmptyState } from "../components/Common";
@@ -7,9 +7,12 @@ import { Teacher } from "../types";
 import { adminApi } from "../lib/adminApi";
 
 export function TeachersPage() {
-  // Query imewekwa ndani ya useMemo kuzuia re-creation zisizo za lazima
+  // Query imerekebishwa kusoma collection ya 'users' badala ya 'teachers'
   const teachersQuery = useMemo(() => {
-    return query(collection(db, "teachers"), orderBy("verificationStatus"));
+    return query(
+      collection(db, "users"),
+      where("role", "==", "TEACHER")
+    );
   }, []);
 
   const { data: teachers, loading } = useCollection<Teacher>(teachersQuery);
@@ -45,10 +48,12 @@ export function TeachersPage() {
     }
   };
 
-  // Safe sorting bila ku-crash kama teachers bado ni undefined
-  const sorted = [...(teachers || [])].sort((a, b) =>
-    a.verificationStatus === "PENDING" ? -1 : 1
-  );
+  // Kupanga walimu wenye status ya PENDING wawe juu
+  const sorted = [...(teachers || [])].sort((a, b) => {
+    const statusA = a.status || a.verificationStatus;
+    const statusB = b.status || b.verificationStatus;
+    return statusA === "PENDING" ? -1 : 1;
+  });
 
   return (
     <div className="space-y-6">
@@ -84,6 +89,9 @@ export function TeachersPage() {
               <tbody className="divide-y divide-gray-200 text-sm text-gray-700">
                 {sorted.map((t) => {
                   const targetId = t.id || t.teacherId;
+                  // Inasoma 'status' kwanza, ikiwa haipo inatumia 'verificationStatus'
+                  const currentStatus = t.status || t.verificationStatus;
+
                   return (
                     <Fragment key={targetId}>
                       <tr className="hover:bg-gray-50/80 transition-colors">
@@ -94,7 +102,7 @@ export function TeachersPage() {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <StatusPill status={t.verificationStatus} />
+                          <StatusPill status={currentStatus} />
                         </td>
                         <td className="px-6 py-4">{t.totalUploads || 0}</td>
                         <td className="px-6 py-4">
@@ -104,7 +112,7 @@ export function TeachersPage() {
                           {(t.earningsBalanceTzs || 0).toLocaleString()} TZS
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {t.verificationStatus === "PENDING" && (
+                          {currentStatus === "PENDING" ? (
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-xs transition disabled:opacity-50"
@@ -121,6 +129,8 @@ export function TeachersPage() {
                                 Kataa
                               </button>
                             </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 font-normal">Ilikamilika</span>
                           )}
                         </td>
                       </tr>
