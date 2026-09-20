@@ -7,7 +7,6 @@ import { Teacher } from "../types";
 import { adminApi } from "../lib/adminApi";
 
 export function TeachersPage() {
-  // Query imerekebishwa kusoma collection ya 'users' badala ya 'teachers'
   const teachersQuery = useMemo(() => {
     return query(
       collection(db, "users"),
@@ -48,16 +47,14 @@ export function TeachersPage() {
     }
   };
 
-  // Kupanga walimu wenye status ya PENDING wawe juu
   const sorted = [...(teachers || [])].sort((a, b) => {
-    const statusA = a.status || a.verificationStatus;
-    const statusB = b.status || b.verificationStatus;
-    return statusA === "PENDING" ? -1 : 1;
+    const statusA = String(a.status || a.verificationStatus || "").toUpperCase();
+    const statusB = String(b.status || b.verificationStatus || "").toUpperCase();
+    return statusA === "PENDING" ? -1 : statusB === "PENDING" ? 1 : 0;
   });
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Usimamizi wa Walimu</h1>
@@ -67,7 +64,6 @@ export function TeachersPage() {
         </div>
       </div>
 
-      {/* Content Section */}
       {loading ? (
         <EmptyState text="Inapakia walimu..." />
       ) : sorted.length === 0 ? (
@@ -87,10 +83,9 @@ export function TeachersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 text-sm text-gray-700">
-                {sorted.map((t) => {
-                  const targetId = t.id || t.teacherId;
-                  // Inasoma 'status' kwanza, ikiwa haipo inatumia 'verificationStatus'
-                  const currentStatus = t.status || t.verificationStatus;
+                {sorted.map((t, idx) => {
+                  const targetId = t.id || t.teacherId || `teacher-${idx}`;
+                  const currentStatus = String(t.status || t.verificationStatus || "").trim().toUpperCase();
 
                   return (
                     <Fragment key={targetId}>
@@ -130,12 +125,13 @@ export function TeachersPage() {
                               </button>
                             </div>
                           ) : (
-                            <span className="text-xs text-gray-400 font-normal">Ilikamilika</span>
+                            <span className="text-xs text-gray-400 font-normal">
+                              Ilikamilika ({currentStatus})
+                            </span>
                           )}
                         </td>
                       </tr>
 
-                      {/* Rejection Form Dropdown */}
                       {rejectingId === targetId && (
                         <tr className="bg-rose-50/50">
                           <td colSpan={6} className="px-6 py-4">
@@ -179,3 +175,4 @@ export function TeachersPage() {
     </div>
   );
 }
+
