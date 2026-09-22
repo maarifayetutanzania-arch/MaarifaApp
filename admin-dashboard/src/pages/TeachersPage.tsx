@@ -6,12 +6,12 @@ import { StatusPill, EmptyState } from "../components/Common";
 import { adminApi } from "../lib/adminApi";
 
 export function TeachersPage() {
-  // 1. Query Collection ya 'teachers' moja kwa moja kama chanzo kikuu cha maombi
+  // 1. Query Collection ya 'teachers' kama chanzo kikuu cha maombi ya Verification
   const teachersQuery = useMemo(() => {
     return collection(db, "teachers");
   }, []);
 
-  // 2. Query Collection ya 'users' ili kupata Majina, Emails na Phone numbers
+  // 2. Query Collection ya 'users' ili kuvuta majina na mawasiliano ya walimu
   const usersQuery = useMemo(() => {
     return collection(db, "users");
   }, []);
@@ -28,16 +28,14 @@ export function TeachersPage() {
     if (!teachersData) return [];
 
     return teachersData.map((t) => {
-      // Tafuta User profile kulingana na Document ID au userId ya mwalimu
       const targetUserId = t.userId || t.id;
       const userProfile = (usersData || []).find((u) => u.id === targetUserId) || {};
 
-      // Soma verificationStatus kutoka 'teachers' collection
       const rawVerificationStatus = String(t.verificationStatus || t.status || "PENDING").trim().toUpperCase();
 
       return {
         ...t,
-        id: t.id, // Primary key ya teacher document / user ID
+        id: t.id, // Primary key ya teacher document
         userId: targetUserId,
         fullName: userProfile.fullName || t.fullName || userProfile.email || t.id,
         email: userProfile.email || t.email || "",
