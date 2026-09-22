@@ -1,28 +1,57 @@
 import { Fragment, useState, useMemo } from "react";
-import { collection, query, where } from "firebase/firestore";
+import { collection } from "firebase/firestore";
 import { db } from "../firebase";
 import { useCollection } from "../lib/useCollection";
 import { StatusPill, EmptyState } from "../components/Common";
-import { Teacher } from "../types";
 import { adminApi } from "../lib/adminApi";
 
 export function TeachersPage() {
+  // 1. Query Collection ya 'teachers' moja kwa moja kama chanzo kikuu cha maombi
   const teachersQuery = useMemo(() => {
-    return query(
-      collection(db, "users"),
-      where("role", "==", "TEACHER")
-    );
+    return collection(db, "teachers");
   }, []);
 
-  const { data: teachers, loading } = useCollection<Teacher>(teachersQuery);
+  // 2. Query Collection ya 'users' ili kupata Majina, Emails na Phone numbers
+  const usersQuery = useMemo(() => {
+    return collection(db, "users");
+  }, []);
+
+  const { data: teachersData, loading: loadingTeachers, error: errorTeachers } = useCollection<any>(teachersQuery);
+  const { data: usersData, loading: loadingUsers } = useCollection<any>(usersQuery);
+
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState("");
+
+  // Unganisha taarifa za 'teachers' na 'users'
+  const mergedTeachers = useMemo(() => {
+    if (!teachersData) return [];
+
+    return teachersData.map((t) => {
+      // Tafuta User profile kulingana na Document ID au userId ya mwalimu
+      const targetUserId = t.userId || t.id;
+      const userProfile = (usersData || []).find((u) => u.id === targetUserId) || {};
+
+      // Soma verificationStatus kutoka 'teachers' collection
+      const rawVerificationStatus = String(t.verificationStatus || t.status || "PENDING").trim().toUpperCase();
+
+      return {
+        ...t,
+        id: t.id, // Primary key ya teacher document / user ID
+        userId: targetUserId,
+        fullName: userProfile.fullName || t.fullName || userProfile.email || t.id,
+        email: userProfile.email || t.email || "",
+        phoneNumber: userProfile.phoneNumber || t.phoneNumber || "",
+        verificationStatus: rawVerificationStatus,
+      };
+    });
+  }, [teachersData, usersData]);
 
   const approve = async (teacherId: string) => {
     setBusyId(teacherId);
     try {
       await adminApi.approveTeacher(teacherId);
+      alert("Mwalimu amethibitishwa kikamilifu!");
     } catch (err: any) {
       alert("Imefeli kuthibitisha mwalimu: " + (err.message || err));
     } finally {
@@ -40,6 +69,7 @@ export function TeachersPage() {
       await adminApi.rejectTeacher(teacherId, rejectNotes.trim());
       setRejectingId(null);
       setRejectNotes("");
+      alert("Maombi ya mwalimu yamekataliwa.");
     } catch (err: any) {
       alert("Imefeli kukataa maombi: " + (err.message || err));
     } finally {
@@ -47,27 +77,39 @@ export function TeachersPage() {
     }
   };
 
-  const sorted = [...(teachers || [])].sort((a, b) => {
-    const statusA = String(a.status || a.verificationStatus || "").toUpperCase();
-    const statusB = String(b.status || b.verificationStatus || "").toUpperCase();
+  // Panga ili walimu wenye maombi ya PENDING waonekane mwanzo kabisa
+  const sorted = [...mergedTeachers].sort((a, b) => {
+    const statusA = String(a.verificationStatus || "").toUpperCase();
+    const statusB = String(b.verificationStatus || "").toUpperCase();
     return statusA === "PENDING" ? -1 : statusB === "PENDING" ? 1 : 0;
   });
 
+  if (errorTeachers) {
+    return (
+      <div className="p-4 bg-rose-50 text-rose-700 rounded-xl border border-rose-200">
+        <p className="font-bold">Kosa la Kupokea Data (Firestore Error):</p>
+        <p className="text-sm mt-1">{errorTeachers}</p>
+      </div>
+    );
+  }
+
+  const isLoading = loadingTeachers || loadingUsers;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Usimamizi wa Walimu</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Usimamizi wa Walimu (Verification)</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Kagua maombi mapya na usimamie akaunti zote za walimu zilizothibitishwa.
+            Kagua maombi ya walimu waliopo kwenye mchakato wa kuhakikiwa (Verification).
           </p>
         </div>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <EmptyState text="Inapakia walimu..." />
       ) : sorted.length === 0 ? (
-        <EmptyState text="Hakuna akaunti za walimu zilizopatikana." />
+        <EmptyState text="Hakuna maombi ya walimu yaliyopatikana kwenye collection ya 'teachers'." />
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -75,7 +117,7 @@ export function TeachersPage() {
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   <th className="px-6 py-4">Mwalimu</th>
-                  <th className="px-6 py-4">Hali (Status)</th>
+                  <th className="px-6 py-4">Hali ya Uhakiki (Verification)</th>
                   <th className="px-6 py-4">Maudhui (Uploads)</th>
                   <th className="px-6 py-4">Engagement Score</th>
                   <th className="px-6 py-4">Salio (Balance)</th>
@@ -83,17 +125,21 @@ export function TeachersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 text-sm text-gray-700">
-                {sorted.map((t, idx) => {
-                  const targetId = t.id || t.teacherId || `teacher-${idx}`;
-                  const currentStatus = String(t.status || t.verificationStatus || "").trim().toUpperCase();
+                {sorted.map((t) => {
+                  const targetId = t.id;
+                  const currentStatus = String(t.verificationStatus || "PENDING").toUpperCase();
+                  const isPending = currentStatus === "PENDING";
 
                   return (
                     <Fragment key={targetId}>
                       <tr className="hover:bg-gray-50/80 transition-colors">
                         <td className="px-6 py-4 font-medium text-gray-900">
-                          <div>{t.fullName || targetId}</div>
+                          <div>{t.fullName}</div>
                           {t.email && (
                             <div className="text-xs text-gray-400 font-normal">{t.email}</div>
+                          )}
+                          {t.phoneNumber && (
+                            <div className="text-xs text-gray-400 font-normal">{t.phoneNumber}</div>
                           )}
                         </td>
                         <td className="px-6 py-4">
@@ -107,7 +153,7 @@ export function TeachersPage() {
                           {(t.earningsBalanceTzs || 0).toLocaleString()} TZS
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {currentStatus === "PENDING" ? (
+                          {isPending ? (
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-xs transition disabled:opacity-50"
@@ -125,9 +171,17 @@ export function TeachersPage() {
                               </button>
                             </div>
                           ) : (
-                            <span className="text-xs text-gray-400 font-normal">
-                              Ilikamilika ({currentStatus})
-                            </span>
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                                ✓ {currentStatus}
+                              </span>
+                              <button
+                                className="px-2 py-1 bg-gray-100 hover:bg-rose-100 hover:text-rose-700 text-gray-600 rounded-lg font-medium text-xs transition"
+                                onClick={() => setRejectingId(targetId)}
+                              >
+                                Badili
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -138,7 +192,7 @@ export function TeachersPage() {
                             <div className="flex flex-col sm:flex-row items-center gap-3">
                               <input
                                 className="flex-1 w-full px-4 py-2 rounded-xl border border-rose-200 text-sm outline-none focus:ring-2 focus:ring-rose-500 bg-white"
-                                placeholder="Andika sababu ya kukataa (itaonekana kwa mwalimu)..."
+                                placeholder="Andika sababu ya kukataa/kubadili status..."
                                 value={rejectNotes}
                                 onChange={(e) => setRejectNotes(e.target.value)}
                               />
@@ -148,7 +202,7 @@ export function TeachersPage() {
                                   disabled={busyId === targetId}
                                   onClick={() => submitReject(targetId)}
                                 >
-                                  Thibitisha Kukataa
+                                  Thibitisha
                                 </button>
                                 <button
                                   className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl text-xs font-semibold transition"
@@ -175,4 +229,3 @@ export function TeachersPage() {
     </div>
   );
 }
-
