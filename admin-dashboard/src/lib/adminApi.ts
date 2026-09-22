@@ -1,49 +1,90 @@
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
 
+const adminApproveTeacherFn = httpsCallable(functions, "adminApproveTeacher");
+const adminRejectTeacherFn = httpsCallable(functions, "adminRejectTeacher");
+const adminApproveMaterialFn = httpsCallable(functions, "adminApproveMaterial");
+const adminRejectMaterialFn = httpsCallable(functions, "adminRejectMaterial");
+const adminApprovePayoutFn = httpsCallable(functions, "adminApprovePayout");
+const adminMarkPayoutPaidFn = httpsCallable(functions, "adminMarkPayoutPaid");
+const adminFlagPayoutExceptionFn = httpsCallable(functions, "adminFlagPayoutException");
+
+export interface ApiResponse {
+  success: boolean;
+  message?: string;
+}
+
 export const adminApi = {
   // --- TEACHERS MANAGEMENT ---
-  approveTeacher: async (teacherId: string) => {
-    const adminApproveTeacherFn = httpsCallable(functions, "adminApproveTeacher");
-    const result = await adminApproveTeacherFn({ teacherId });
-    return result.data as { success: boolean; message?: string };
+  approveTeacher: async (teacherId: string): Promise<ApiResponse> => {
+    try {
+      const result = await adminApproveTeacherFn({ teacherId, userId: teacherId });
+      return result.data as ApiResponse;
+    } catch (error: any) {
+      console.error("Error approving teacher:", error);
+      throw new Error(error.message || "Imefeli kuthibitisha mwalimu.");
+    }
   },
 
-  rejectTeacher: async (teacherId: string, notes: string) => {
-    const adminRejectTeacherFn = httpsCallable(functions, "adminRejectTeacher");
-    const result = await adminRejectTeacherFn({ teacherId, notes });
-    return result.data as { success: boolean; message?: string };
+  rejectTeacher: async (teacherId: string, notes: string): Promise<ApiResponse> => {
+    try {
+      const result = await adminRejectTeacherFn({ teacherId, userId: teacherId, notes, reason: notes });
+      return result.data as ApiResponse;
+    } catch (error: any) {
+      console.error("Error rejecting teacher:", error);
+      throw new Error(error.message || "Imefeli kukataa maombi ya mwalimu.");
+    }
   },
 
   // --- CONTENT & MATERIALS MANAGEMENT ---
-  approveMaterial: async (materialId: string) => {
-    const adminApproveMaterialFn = httpsCallable(functions, "adminApproveMaterial");
-    const result = await adminApproveMaterialFn({ materialId });
-    return result.data as { success: boolean; message?: string };
+  approveMaterial: async (materialId: string): Promise<ApiResponse> => {
+    try {
+      const result = await adminApproveMaterialFn({ materialId });
+      return result.data as ApiResponse;
+    } catch (error: any) {
+      console.error("Error approving material:", error);
+      throw new Error(error.message || "Imefeli kuthibitisha maudhui.");
+    }
   },
 
-  rejectMaterial: async (materialId: string, reason: string) => {
-    const adminRejectMaterialFn = httpsCallable(functions, "adminRejectMaterial");
-    const result = await adminRejectMaterialFn({ materialId, reason });
-    return result.data as { success: boolean; message?: string };
+  rejectMaterial: async (materialId: string, reason: string): Promise<ApiResponse> => {
+    try {
+      const result = await adminRejectMaterialFn({ materialId, reason, notes: reason });
+      return result.data as ApiResponse;
+    } catch (error: any) {
+      console.error("Error rejecting material:", error);
+      throw new Error(error.message || "Imefeli kukataa maudhui.");
+    }
   },
 
   // --- PAYOUTS & TRANSACTIONS MANAGEMENT ---
-  approvePayout: async (payoutId: string) => {
-    const adminApprovePayoutFn = httpsCallable(functions, "adminApprovePayout");
-    const result = await adminApprovePayoutFn({ payoutId });
-    return result.data as { success: boolean; message?: string };
+  approvePayout: async (payoutId: string): Promise<ApiResponse> => {
+    try {
+      const result = await adminApprovePayoutFn({ payoutId });
+      return result.data as ApiResponse;
+    } catch (error: any) {
+      console.error("Error approving payout:", error);
+      throw new Error(error.message || "Imefeli kuthibitisha malipo.");
+    }
   },
 
-  markPayoutPaid: async (payoutId: string, transactionId: string) => {
-    const adminMarkPayoutPaidFn = httpsCallable(functions, "adminMarkPayoutPaid");
-    const result = await adminMarkPayoutPaidFn({ payoutId, transactionId });
-    return result.data as { success: boolean; message?: string };
+  markPayoutPaid: async (payoutId: string, transactionId: string): Promise<ApiResponse> => {
+    try {
+      const result = await adminMarkPayoutPaidFn({ payoutId, transactionId });
+      return result.data as ApiResponse;
+    } catch (error: any) {
+      console.error("Error marking payout paid:", error);
+      throw new Error(error.message || "Imefeli kuweka kumbukumbu ya malipo.");
+    }
   },
 
-  flagPayoutException: async (payoutId: string, notes: string) => {
-    const adminFlagPayoutExceptionFn = httpsCallable(functions, "adminFlagPayoutException");
-    const result = await adminFlagPayoutExceptionFn({ payoutId, notes });
-    return result.data as { success: boolean; message?: string };
+  flagPayoutException: async (payoutId: string, notes: string): Promise<ApiResponse> => {
+    try {
+      const result = await adminFlagPayoutExceptionFn({ payoutId, notes, reason: notes });
+      return result.data as ApiResponse;
+    } catch (error: any) {
+      console.error("Error flagging payout exception:", error);
+      throw new Error(error.message || "Imefeli kuweka flag kwenye malipo.");
+    }
   },
 };
