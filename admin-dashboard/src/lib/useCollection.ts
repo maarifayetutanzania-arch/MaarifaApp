@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Query, onSnapshot } from "firebase/firestore";
+import { Query, onSnapshot, DocumentData } from "firebase/firestore";
 
-export function useCollection<T>(query: Query | null): { data: T[]; loading: boolean; error: string | null } {
+export function useCollection<T>(query: Query<DocumentData> | null) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,8 +18,8 @@ export function useCollection<T>(query: Query | null): { data: T[]; loading: boo
       query,
       (snap) => {
         const docsData = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as T)
+          id: d.id, // Inahakikisha Firestore Document ID inajumuishwa mara zote
+          ...(d.data() as T),
         }));
         setData(docsData);
         setLoading(false);
@@ -33,7 +33,7 @@ export function useCollection<T>(query: Query | null): { data: T[]; loading: boo
     );
 
     return () => unsubscribe();
-  }, [query]);
+  }, []);
 
   return { data, loading, error };
 }
