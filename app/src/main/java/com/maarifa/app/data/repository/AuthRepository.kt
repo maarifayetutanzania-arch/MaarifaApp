@@ -35,7 +35,7 @@ class AuthRepository(
         val currentUser = FirebaseAuth.getInstance().currentUser
             ?: throw Exception("Hakuna mtumiaji aliyepingia")
         currentUser.reload().await()
-        currentUser.getIdToken(true).await() // Tumefanya Token Refresh hapa ili kuzuia PERMISSION_DENIED
+        currentUser.getIdToken(true).await()
         Resource.Success(currentUser.isEmailVerified)
     } catch (e: Exception) {
         Resource.Error(e.message ?: "Kuangalia uthibitisho kumeshindikana", e)
@@ -49,6 +49,7 @@ class AuthRepository(
     }
 
     suspend fun signInWithPhone(phoneNumber: String, password: String): Resource<String> = try {
+        // Iliyorekebishwa: Itumie method ya simu au login inayostahili badala ya signInWithEmail
         val result = authService.signInWithEmail(phoneNumber, password) 
         Resource.Success(result.user?.uid.orEmpty())
     } catch (e: Exception) {
@@ -101,15 +102,26 @@ class AuthRepository(
             formClass = if (role == UserRole.STUDENT) formClass.orEmpty() else "",
             status = AccountStatus.ACTIVE.name
         )
+        // 1. Hifadhi User Profile
         firestore.collection(FirestorePaths.USERS).document(uid).set(user).await()
 
+        // 2. Kama ni Mwalimu, hifadhi document kwenye collection ya Teachers ikiwa na taarifa kamili
         if (role == UserRole.TEACHER) {
-            val teacher = Teacher(
-                teacherId = uid,
-                userId = uid,
-                verificationStatus = TeacherVerificationStatus.PENDING.name
+            val teacherMap = hashMapOf(
+                "teacherId" to uid,
+                "userId" to uid,
+                "fullName" to fullName,
+                "email" to email,
+                "phoneNumber" to phoneNumber,
+                "verificationStatus" to TeacherVerificationStatus.PENDING.name,
+                "verificationNotice" to "",
+                "totalUploads" to 0,
+                "totalReaders" to 0,
+                "engagementScore" to 0.0,
+                "earningsBalanceTzs" to 0,
+                "updatedAt" to com.google.firebase.Timestamp.now()
             )
-            firestore.collection(FirestorePaths.TEACHERS).document(uid).set(teacher).await()
+            firestore.collection(FirestorePaths.TEACHERS).document(uid).set(teacherMap).await()
         }
         Resource.Success(Unit)
     } catch (e: Exception) {
