@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.firestore.FirebaseFirestore
 import com.maarifa.app.data.model.AuthProvider
 import com.maarifa.app.data.model.User
 import com.maarifa.app.data.model.UserRole
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 data class AuthUiState(
     val checkingSession: Boolean = true,
@@ -129,6 +131,11 @@ class AuthViewModel(
 
                     when (profileResult) {
                         is Resource.Success -> {
+                            // Kama aliyesajiliwa ni Mwalimu, hakikisha anatengenezewa record 'teachers' collection
+                            if (role == UserRole.TEACHER) {
+                                createTeacherDocumentIfNeeded(uid, fullName, email, phoneNumber)
+                            }
+
                             loadProfileAfterAuth(uid)
                             _state.value = _state.value.copy(
                                 isAwaitingEmailVerification = false,
@@ -158,6 +165,37 @@ class AuthViewModel(
                 )
             }
             Resource.Loading -> Unit
+        }
+    }
+
+    // Helper function ya kutengeneza document ya Mwalimu kwenye collection ya 'teachers'
+    private suspend fun createTeacherDocumentIfNeeded(
+        uid: String,
+        fullName: String,
+        email: String,
+        phoneNumber: String
+    ) {
+        try {
+            val teacherMap = hashMapOf(
+                "userId" to uid,
+                "fullName" to fullName,
+                "email" to email,
+                "phoneNumber" to phoneNumber,
+                "verificationStatus" to "PENDING", // Status inayohitajika Admin Console
+                "verificationNotise" to "",
+                "totalUploads" to 0,
+                "totalReaders" to 0,
+                "engagementScore" to 0.0,
+                "earningsBalanceTzs" to 0,
+                "updatedAt" to com.google.firebase.Timestamp.now()
+            )
+            FirebaseFirestore.getInstance()
+                .collection("teachers")
+                .document(uid)
+                .set(teacherMap)
+                .await()
+        } catch (e: Exception) {
+            android.util.Log.e("AuthViewModel", "Error creating teacher record: ${e.message}")
         }
     }
 
@@ -361,7 +399,12 @@ class AuthViewModel(
         )
 
         when (result) {
-            is Resource.Success -> loadProfileAfterAuth(activeUid)
+            is Resource.Success -> {
+                if (role == UserRole.TEACHER) {
+                    createTeacherDocumentIfNeeded(activeUid, fullName, email, phoneNumber)
+                }
+                loadProfileAfterAuth(activeUid)
+            }
             is Resource.Error -> _state.value = _state.value.copy(
                 isSubmitting = false,
                 errorMessage = result.message
@@ -373,5 +416,18 @@ class AuthViewModel(
     fun signOut() {
         authRepository.signOut()
         _state.value = AuthUiState(checkingSession = false, isSignedIn = false)
+    }
+}
+
+class AuthViewModelFactory(
+    private val authRepository: AuthRepository,
+    private val authService: FirebaseAuthService
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
+            return AuthViewModel(authRepository, authService) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
