@@ -375,16 +375,3 @@ class AuthViewModel(
         _state.value = AuthUiState(checkingSession = false, isSignedIn = false)
     }
 }
-
-class AuthViewModelFactory(
-    private val authRepository: AuthRepository,
-    private val authService: FirebaseAuthService
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
-            return AuthViewModel(authRepository, authService) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
