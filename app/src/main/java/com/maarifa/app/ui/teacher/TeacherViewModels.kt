@@ -50,7 +50,11 @@ class TeacherDashboardViewModel(
             teacherRepository.observeTeacher(uid).onEach { res ->
                 _state.update { currentState ->
                     when (res) {
-                        is Resource.Success -> currentState.copy(isLoading = false, teacher = res.data, errorMessage = null)
+                        is Resource.Success -> {
+                            // FALLBACK INAINGIA HAPA: Kama res.data ni null, tunatengeneza Teacher ya msingi badala ya ku-crash
+                            val teacherData = res.data ?: Teacher(teacherId = uid, userId = uid)
+                            currentState.copy(isLoading = false, teacher = teacherData, errorMessage = null)
+                        }
                         is Resource.Error -> currentState.copy(isLoading = false, errorMessage = res.message)
                         Resource.Loading -> currentState.copy(isLoading = true)
                     }
@@ -139,7 +143,7 @@ class TeacherMaterialsViewModel(
             materialRepository.observeTeacherMaterials(uid).onEach { res ->
                 _state.update { currentState ->
                     when (res) {
-                        is Resource.Success -> currentState.copy(isLoading = false, materials = res.data, errorMessage = null)
+                        is Resource.Success -> currentState.copy(isLoading = false, materials = res.data ?: emptyList(), errorMessage = null)
                         is Resource.Error -> currentState.copy(isLoading = false, errorMessage = res.message)
                         Resource.Loading -> currentState.copy(isLoading = true)
                     }
@@ -177,7 +181,7 @@ class TeacherEarningsViewModel(
                 teacherRepository.observeTeacher(uid),
                 payoutRepository.observePayouts(uid)
             ) { teacherRes, payoutRes ->
-                val teacher = (teacherRes as? Resource.Success)?.data
+                val teacher = (teacherRes as? Resource.Success)?.data ?: Teacher(teacherId = uid, userId = uid)
                 val payouts = (payoutRes as? Resource.Success)?.data ?: emptyList()
                 val isLoading = teacherRes is Resource.Loading || payoutRes is Resource.Loading
                 val error = (teacherRes as? Resource.Error)?.message ?: (payoutRes as? Resource.Error)?.message
