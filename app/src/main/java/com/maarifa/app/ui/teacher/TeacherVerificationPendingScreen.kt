@@ -51,8 +51,11 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
     val state by vm.state.collectAsState()
     val status = state.teacher?.verificationStatus
 
+    // Mwalimu akiwa VERIFIED, fungua Dashboard
     LaunchedEffect(status) {
-        if (status == TeacherVerificationStatus.VERIFIED.name) onVerified()
+        if (status == TeacherVerificationStatus.VERIFIED.name || status == "VERIFIED") {
+            onVerified()
+        }
     }
 
     // Maarifa Brand Design Specs
@@ -61,7 +64,7 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
     )
 
     val (icon, iconTint, iconBgColor, titleText, bodyText) = when (status) {
-        TeacherVerificationStatus.REJECTED.name -> Tuple5(
+        TeacherVerificationStatus.REJECTED.name, "REJECTED" -> Tuple5(
             Icons.Default.Cancel,
             Color(0xFFC62828),
             Color(0xFFFFEBEE),
@@ -69,7 +72,7 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
             state.teacher?.verificationNotes?.takeIf { it.isNotBlank() }
                 ?: "Your teacher application wasn't approved. Contact support for details."
         )
-        TeacherVerificationStatus.VERIFIED.name -> Tuple5(
+        TeacherVerificationStatus.VERIFIED.name, "VERIFIED" -> Tuple5(
             Icons.Default.CheckCircle,
             Color(0xFF1E7F55),
             Color(0xFFE8F5E9),
@@ -142,7 +145,7 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
                     lineHeight = 20.sp
                 )
 
-                if (status == TeacherVerificationStatus.VERIFIED.name) {
+                if (status == TeacherVerificationStatus.VERIFIED.name || status == "VERIFIED") {
                     Spacer(modifier = Modifier.height(24.dp))
                     GradientButton(
                         text = "Continue to dashboard",
@@ -155,7 +158,6 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
     }
 }
 
-// Internal data holder for UI property mapping
 private data class Tuple5<A, B, C, D, E>(
     val first: A,
     val second: B,
