@@ -103,15 +103,18 @@ fun RegisterScreen(
 
             Button(
                 onClick = {
+                    val roleToPass = selectedRole
                     authViewModel.verifyAndCompleteRegistration(
                         fullName = fullName,
                         phoneNumber = phoneNumber,
                         email = email,
-                        role = selectedRole,
+                        role = roleToPass,
                         region = region,
                         schoolName = schoolName.ifBlank { null },
-                        formClass = if (selectedRole == UserRole.STUDENT) formClass else null,
-                        onSuccess = { onRegisterSuccess(selectedRole) }
+                        formClass = if (roleToPass == UserRole.STUDENT) formClass else null,
+                        onSuccess = { 
+                            onRegisterSuccess(roleToPass) 
+                        }
                     )
                 },
                 enabled = !state.isSubmitting,
