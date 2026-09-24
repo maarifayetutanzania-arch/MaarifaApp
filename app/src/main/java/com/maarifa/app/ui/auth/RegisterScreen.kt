@@ -22,7 +22,7 @@ import com.maarifa.app.data.model.UserRole
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
-    onRegisterSuccess: (UserRole) -> Unit, // ← 1. Imerekebishwa kupokea UserRole
+    onRegisterSuccess: (UserRole) -> Unit,
     onNavigateToOtp: (String) -> Unit,
     authViewModel: AuthViewModel
 ) {
@@ -111,7 +111,7 @@ fun RegisterScreen(
                         region = region,
                         schoolName = schoolName.ifBlank { null },
                         formClass = if (selectedRole == UserRole.STUDENT) formClass else null,
-                        onSuccess = { onRegisterSuccess(selectedRole) } // ← 2. Kupitisha selectedRole hapa
+                        onSuccess = { onRegisterSuccess(selectedRole) }
                     )
                 },
                 enabled = !state.isSubmitting,
