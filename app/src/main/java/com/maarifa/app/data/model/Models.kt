@@ -34,10 +34,13 @@ data class Teacher(
     var totalUploads: Int = 0,
     var totalReaders: Int = 0,
     var engagementScore: Double = 0.0,
-    var earningsBalanceTzs: Long = 0,
+    var earningsBalanceTzs: Long = 0L,
     var payoutStatus: String = PayoutStatus.GENERATED.name,
     var bio: String = "",
     var subjectsTaught: List<String> = emptyList(),
+    var paymentMethod: String? = null,
+    var provider: String? = null,
+    var accountNumber: String? = null,
     @ServerTimestamp var createdAt: Date? = null
 )
 
@@ -52,7 +55,7 @@ data class Material(
     var topic: String = "",
     var fileUrl: String = "",
     var fileType: String = MaterialFileType.PDF.name,
-    var fileSizeBytes: Long = 0,
+    var fileSizeBytes: Long = 0L,
     var pageCount: Int = 0,
     var status: String = MaterialStatus.PENDING_REVIEW.name,
     var rejectionReason: String = "",
@@ -67,7 +70,7 @@ data class Subscription(
     @DocumentId var subscriptionId: String = "",
     var userId: String = "",
     var planType: String = PlanType.MONTHLY.name,
-    var amountTzs: Long = 0,
+    var amountTzs: Long = 0L,
     var durationDays: Int = 0,
     var provider: String = "",
     var channel: String = PaymentChannel.MOBILE_MONEY.name,
@@ -89,8 +92,8 @@ data class Download(
     var materialId: String = "",
     var localStatus: String = DownloadLocalStatus.QUEUED.name,
     var localFileName: String = "",
-    var bytesTotal: Long = 0,
-    var bytesDownloaded: Long = 0,
+    var bytesTotal: Long = 0L,
+    var bytesDownloaded: Long = 0L,
     @ServerTimestamp var downloadedAt: Date? = null,
     var lastOpenedAt: Date? = null
 )
@@ -101,7 +104,7 @@ data class Engagement(
     var materialId: String = "",
     var teacherId: String = "",
     var readCount: Int = 0,
-    var readingTimeSeconds: Long = 0,
+    var readingTimeSeconds: Long = 0L,
     var progressPercent: Int = 0,
     var lastAccessedAt: Date? = null
 )
@@ -112,7 +115,7 @@ data class Payout(
     var teacherName: String = "",
     var period: String = "", // e.g. "2026-08"
     var engagementSharePercent: Double = 0.0,
-    var calculatedAmountTzs: Long = 0,
+    var calculatedAmountTzs: Long = 0L,
     var status: String = PayoutStatus.GENERATED.name,
     var approvedBy: String = "",
     var transactionId: String = "",
