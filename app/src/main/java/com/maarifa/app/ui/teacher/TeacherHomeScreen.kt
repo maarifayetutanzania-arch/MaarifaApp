@@ -35,7 +35,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.maarifa.app.data.model.TeacherVerificationStatus
 import com.maarifa.app.di.SimpleViewModelFactory
 import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.ui.auth.AuthViewModel
@@ -76,11 +75,6 @@ fun TeacherHomeScreen(
     val primaryGreen = Color(0xFF1E7F55)
     val darkGreen = Color(0xFF1B5E20)
     val lightGreenIndicator = Color(0xFFC8E6C9)
-
-    if (dashboardState.teacher?.verificationStatus != TeacherVerificationStatus.VERIFIED.name && !dashboardState.isLoading) {
-        TeacherVerificationPendingScreen(onVerified = {})
-        return
-    }
 
     Scaffold(
         topBar = {
