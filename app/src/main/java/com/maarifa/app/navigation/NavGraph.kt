@@ -24,9 +24,10 @@ import com.maarifa.app.ui.auth.OtpVerificationScreen
 import com.maarifa.app.ui.auth.RegisterScreen
 import com.maarifa.app.ui.student.StudentHomeScreen
 import com.maarifa.app.ui.teacher.TeacherHomeScreen
+import com.maarifa.app.ui.teacher.TeacherVerificationPendingScreen
 
 sealed class Screen(val route: String) {
-    data object Splash : Screen("splash") // Imewekwa hapa
+    data object Splash : Screen("splash")
     data object Login : Screen("login")
     data object Register : Screen("register")
     data object OtpVerification : Screen("otp_verification/{phoneNumber}") {
@@ -34,6 +35,7 @@ sealed class Screen(val route: String) {
     }
     data object StudentHome : Screen("student_home")
     data object TeacherHome : Screen("teacher_home")
+    data object TeacherPending : Screen("teacher_pending")   // ← ONGEZA HII
 }
 
 @Composable
@@ -48,16 +50,26 @@ fun NavGraph(
 ) {
     val state by authViewModel.state.collectAsState()
 
+    // Helper: amua target route kwa teacher
+    fun teacherTargetRoute(): String {
+        // Kwa sasa tunaweka teacher wote waende pending kwanza.
+        // Baadaye unaweza kuangalia verificationStatus kutoka teacher document.
+        return Screen.TeacherPending.route
+    }
+
     NavHost(
         navController = navController,
-        startDestination = Screen.Splash.route // Inaanza kwenye Splash badala ya Login
+        startDestination = Screen.Splash.route
     ) {
-        // 1. Splash Screen
+        // 1. Splash
         composable(Screen.Splash.route) {
             LaunchedEffect(state.checkingSession, state.isSignedIn, state.isEmailVerified, state.profile) {
                 if (!state.checkingSession) {
                     val target = when {
-                        state.isSignedIn && state.isEmailVerified && state.profile?.role == "TEACHER" -> Screen.TeacherHome.route
+                        state.isSignedIn && state.isEmailVerified && state.profile?.role == "TEACHER" -> {
+                            // Teacher → pending (au home kama tayari approved — tutaongeza baadaye)
+                            Screen.TeacherPending.route
+                        }
                         state.isSignedIn && state.isEmailVerified -> Screen.StudentHome.route
                         state.isSignedIn && !state.isEmailVerified -> Screen.Register.route
                         else -> Screen.Login.route
@@ -87,7 +99,12 @@ fun NavGraph(
             RegisterScreen(
                 onNavigateToLogin = { navController.navigate(Screen.Login.route) },
                 onRegisterSuccess = {
-                    val target = if (state.profile?.role == "TEACHER") Screen.TeacherHome.route else Screen.StudentHome.route
+                    // MUHIMU: Tumia role kutoka registration, si state.profile (inaweza kuwa null bado)
+                    // Kwa sasa tunaweka teacher aende pending
+                    val target = Screen.TeacherPending.route   // ← Badilisha hapa
+                    // Ikiwa unataka kuweka student vs teacher:
+                    // val target = if (/* role was TEACHER */) Screen.TeacherPending.route else Screen.StudentHome.route
+
                     navController.navigate(target) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -107,7 +124,7 @@ fun NavGraph(
             OtpVerificationScreen(
                 phoneNumber = phoneNumber,
                 onVerificationSuccess = {
-                    val target = if (state.profile?.role == "TEACHER") Screen.TeacherHome.route else Screen.StudentHome.route
+                    val target = Screen.TeacherPending.route  // au angalia role
                     navController.navigate(target) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -127,6 +144,17 @@ fun NavGraph(
             TeacherHomeScreen(
                 navController = navController,
                 authViewModel = authViewModel
+            )
+        }
+
+        // ← ONGEZA HII
+        composable(Screen.TeacherPending.route) {
+            TeacherVerificationPendingScreen(
+                onVerified = {
+                    navController.navigate(Screen.TeacherHome.route) {
+                        popUpTo(Screen.TeacherPending.route) { inclusive = true }
+                    }
+                }
             )
         }
     }
