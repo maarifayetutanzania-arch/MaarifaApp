@@ -23,22 +23,19 @@ export function TeachersPage() {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState("");
 
-  // Unganisha taarifa za 'teachers' na 'users' BILA KURUHUSU FALLBACK YA STATUS ISIYO NINETIWA
+  // Unganisha taarifa za 'teachers' na 'users'
   const mergedTeachers = useMemo(() => {
     if (!teachersData) return [];
 
     return teachersData.map((t) => {
-      // Direct Lookup: Mwalimu ana id (ambayo ni UID au teacherId)
       const targetUserId = t.userId || t.teacherId || t.id;
       const userProfile = (usersData || []).find((u) => u.id === targetUserId || u.userId === targetUserId) || {};
 
-      // SOMA HAPAHAPA: Hakikisha inachukua EXACT verificationStatus iliyopo kwenye 'teachers' collection!
-      // Kama haipo kwenye 'teachers', chaguo la mwisho ni 'PENDING' badala ya 'status'
       const rawVerificationStatus = String(t.verificationStatus || "PENDING").trim().toUpperCase();
 
       return {
         ...t,
-        id: t.id, // Primary key ya teacher document
+        id: t.id,
         userId: targetUserId,
         fullName: userProfile.fullName || t.fullName || userProfile.email || t.email || t.id,
         email: userProfile.email || t.email || "",
@@ -173,12 +170,13 @@ export function TeachersPage() {
                             </div>
                           ) : (
                             <div className="flex items-center justify-end gap-2">
+                              {/* MAREKEBISHO HAPA: Tumetumia VERIFIED badala ya APPROVED */}
                               <span className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${
-                                currentStatus === 'APPROVED' 
+                                currentStatus === 'VERIFIED' 
                                   ? 'text-emerald-600 bg-emerald-50 border-emerald-200' 
                                   : 'text-rose-600 bg-rose-50 border-rose-200'
                               }`}>
-                                {currentStatus === 'APPROVED' ? '✓ APPROVED' : '✕ REJECTED'}
+                                {currentStatus === 'VERIFIED' ? '✓ VERIFIED' : '✕ REJECTED'}
                               </span>
                               <button
                                 className="px-2 py-1 bg-gray-100 hover:bg-rose-100 hover:text-rose-700 text-gray-600 rounded-lg font-medium text-xs transition"
