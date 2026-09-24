@@ -61,7 +61,6 @@ fun NavGraph(
                 if (!state.checkingSession) {
                     val target = when {
                         state.isSignedIn && state.isEmailVerified && state.profile?.role == "TEACHER" -> {
-                            // Kama ni Teacher, mtume Pending Screen. Huko ataangaliwa kama ni VERIFIED/APPROVED au PENDING
                             Screen.TeacherPending.route
                         }
                         state.isSignedIn && state.isEmailVerified -> Screen.StudentHome.route
@@ -90,12 +89,11 @@ fun NavGraph(
             )
         }
 
-        // 3. Register Screen (Imesasishwa kupokea role)
+        // 3. Register Screen
         composable(Screen.Register.route) {
             RegisterScreen(
                 onNavigateToLogin = { navController.navigate(Screen.Login.route) },
-                onRegisterSuccess = { role ->
-                    // Routing kulingana na UserRole iliyopitishwa baada ya registration
+                onRegisterSuccess = { role: UserRole ->
                     val target = if (role == UserRole.TEACHER || role.name == "TEACHER") {
                         Screen.TeacherPending.route
                     } else {
