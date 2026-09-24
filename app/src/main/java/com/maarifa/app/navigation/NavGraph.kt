@@ -55,7 +55,6 @@ fun NavGraph(
         navController = navController,
         startDestination = Screen.Splash.route
     ) {
-        // 1. Splash Screen
         composable(Screen.Splash.route) {
             LaunchedEffect(state.checkingSession, state.isSignedIn, state.isEmailVerified, state.profile) {
                 if (!state.checkingSession) {
@@ -81,7 +80,6 @@ fun NavGraph(
             }
         }
 
-        // 2. Login Screen
         composable(Screen.Login.route) {
             LoginScreen(
                 navController = navController,
@@ -89,19 +87,18 @@ fun NavGraph(
             )
         }
 
-        // 3. Register Screen
         composable(Screen.Register.route) {
             RegisterScreen(
                 onNavigateToLogin = { navController.navigate(Screen.Login.route) },
                 onRegisterSuccess = { role: UserRole ->
-                    val target = if (role == UserRole.TEACHER || role.name == "TEACHER") {
+                    val target = if (role == UserRole.TEACHER) {
                         Screen.TeacherPending.route
                     } else {
                         Screen.StudentHome.route
                     }
 
                     navController.navigate(target) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
+                        popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 },
                 onNavigateToOtp = { phone ->
@@ -111,7 +108,6 @@ fun NavGraph(
             )
         }
 
-        // 4. OTP Verification Screen
         composable(
             route = Screen.OtpVerification.route,
             arguments = listOf(navArgument("phoneNumber") { type = NavType.StringType })
@@ -129,7 +125,6 @@ fun NavGraph(
             )
         }
 
-        // 5. Student Home Screen
         composable(Screen.StudentHome.route) {
             StudentHomeScreen(
                 navController = navController,
@@ -137,7 +132,6 @@ fun NavGraph(
             )
         }
 
-        // 6. Teacher Home Screen
         composable(Screen.TeacherHome.route) {
             TeacherHomeScreen(
                 navController = navController,
@@ -145,7 +139,6 @@ fun NavGraph(
             )
         }
 
-        // 7. Teacher Verification Pending Screen
         composable(Screen.TeacherPending.route) {
             TeacherVerificationPendingScreen(
                 onVerified = {
