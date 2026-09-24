@@ -16,6 +16,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.maarifa.app.data.model.UserRole
 import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.ui.auth.AuthViewModel
 import com.maarifa.app.ui.auth.AuthViewModelFactory
@@ -60,12 +61,8 @@ fun NavGraph(
                 if (!state.checkingSession) {
                     val target = when {
                         state.isSignedIn && state.isEmailVerified && state.profile?.role == "TEACHER" -> {
-                            // Kama status ya mwalimu ni VERIFIED/APPROVED, mpeleke TeacherHome
-                            if (state.profile?.verificationStatus == "VERIFIED" || state.profile?.verificationStatus == "APPROVED") {
-                                Screen.TeacherHome.route
-                            } else {
-                                Screen.TeacherPending.route
-                            }
+                            // Kama ni Teacher, mtume Pending Screen. Huko ataangaliwa kama ni VERIFIED/APPROVED au PENDING
+                            Screen.TeacherPending.route
                         }
                         state.isSignedIn && state.isEmailVerified -> Screen.StudentHome.route
                         state.isSignedIn && !state.isEmailVerified -> Screen.Register.route
@@ -93,13 +90,17 @@ fun NavGraph(
             )
         }
 
-        // 3. Register Screen
+        // 3. Register Screen (Imesasishwa kupokea role)
         composable(Screen.Register.route) {
             RegisterScreen(
                 onNavigateToLogin = { navController.navigate(Screen.Login.route) },
-                onRegisterSuccess = {
-                    val userRole = state.profile?.role ?: "STUDENT"
-                    val target = if (userRole == "TEACHER") Screen.TeacherPending.route else Screen.StudentHome.route
+                onRegisterSuccess = { role ->
+                    // Routing kulingana na UserRole iliyopitishwa baada ya registration
+                    val target = if (role == UserRole.TEACHER || role.name == "TEACHER") {
+                        Screen.TeacherPending.route
+                    } else {
+                        Screen.StudentHome.route
+                    }
 
                     navController.navigate(target) {
                         popUpTo(Screen.Login.route) { inclusive = true }
@@ -121,9 +122,7 @@ fun NavGraph(
             OtpVerificationScreen(
                 phoneNumber = phoneNumber,
                 onVerificationSuccess = {
-                    val userRole = state.profile?.role ?: "STUDENT"
-                    val target = if (userRole == "TEACHER") Screen.TeacherPending.route else Screen.StudentHome.route
-                    
+                    val target = if (state.profile?.role == "TEACHER") Screen.TeacherPending.route else Screen.StudentHome.route
                     navController.navigate(target) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -132,7 +131,7 @@ fun NavGraph(
             )
         }
 
-        // 5. Student Home
+        // 5. Student Home Screen
         composable(Screen.StudentHome.route) {
             StudentHomeScreen(
                 navController = navController,
@@ -140,7 +139,7 @@ fun NavGraph(
             )
         }
 
-        // 6. Teacher Home
+        // 6. Teacher Home Screen
         composable(Screen.TeacherHome.route) {
             TeacherHomeScreen(
                 navController = navController,
