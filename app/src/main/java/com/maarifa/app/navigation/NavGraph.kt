@@ -60,10 +60,8 @@ fun NavGraph(
             LaunchedEffect(state.checkingSession, state.isSignedIn, state.isEmailVerified, state.profile) {
                 if (!state.checkingSession) {
                     val target = when {
-                        // Teacher → always go to Pending first.
-                        // Pending screen will auto-navigate to TeacherHome if status == VERIFIED
                         state.isSignedIn && state.isEmailVerified && state.profile?.role == "TEACHER" -> {
-                            Screen.TeacherPending.route
+                            Screen.TeacherHome.route
                         }
                         state.isSignedIn && state.isEmailVerified -> {
                             Screen.StudentHome.route
@@ -105,9 +103,8 @@ fun NavGraph(
                     navController.navigate(Screen.Login.route)
                 },
                 onRegisterSuccess = { role ->
-                    // role inatoka kwenye RegisterScreen (selectedRole)
                     val target = if (role == UserRole.TEACHER) {
-                        Screen.TeacherPending.route
+                        Screen.TeacherHome.route
                     } else {
                         Screen.StudentHome.route
                     }
@@ -133,9 +130,8 @@ fun NavGraph(
             OtpVerificationScreen(
                 phoneNumber = phoneNumber,
                 onVerificationSuccess = {
-                    // Kwa OTP tunaangalia profile baada ya success
                     val target = if (state.profile?.role == "TEACHER") {
-                        Screen.TeacherPending.route
+                        Screen.TeacherHome.route
                     } else {
                         Screen.StudentHome.route
                     }
@@ -176,3 +172,4 @@ fun NavGraph(
         }
     }
 }
+
