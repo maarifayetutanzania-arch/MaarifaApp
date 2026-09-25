@@ -36,7 +36,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.maarifa.app.data.model.TeacherVerificationStatus
 import com.maarifa.app.di.SimpleViewModelFactory
 import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.ui.common.GradientButton
@@ -50,10 +49,12 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
         }
     )
     val state by vm.state.collectAsState()
-    val status = state.teacher?.verificationStatus
 
+    val status = state.teacher?.verificationStatus?.uppercase() ?: "PENDING"
+
+    // Auto-navigate pindi tu akaunti inapokuwa verified
     LaunchedEffect(status) {
-        if (status == TeacherVerificationStatus.VERIFIED.name || status == "VERIFIED") {
+        if (status == "VERIFIED") {
             onVerified()
         }
     }
@@ -62,31 +63,6 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
         colors = listOf(Color(0xFFE8F5E9), Color(0xFFC8E6C9), Color(0xFFA5D6A7))
     )
 
-    val (icon, iconTint, iconBgColor, titleText, bodyText) = when (status) {
-        TeacherVerificationStatus.REJECTED.name, "REJECTED" -> Tuple5(
-            Icons.Default.Cancel,
-            Color(0xFFC62828),
-            Color(0xFFFFEBEE),
-            "Application not approved",
-            state.teacher?.verificationNotes?.takeIf { it.isNotBlank() }
-                ?: "Your teacher application wasn't approved. Contact support for details."
-        )
-        TeacherVerificationStatus.VERIFIED.name, "VERIFIED" -> Tuple5(
-            Icons.Default.CheckCircle,
-            Color(0xFF1E7F55),
-            Color(0xFFE8F5E9),
-            "Application Approved!",
-            "Your account is verified. You can now access your dashboard and publish materials."
-        )
-        else -> Tuple5(
-            Icons.Default.HourglassTop,
-            Color(0xFF1E7F55),
-            Color(0xFFE8F5E9),
-            "Verification in progress",
-            "Our team is reviewing your teacher application. You'll be notified as soon as you're approved — this usually doesn't take long."
-        )
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -94,8 +70,41 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         if (state.isLoading) {
-            CircularProgressIndicator(color = Color(0xFF1E7F55))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = Color(0xFF1E7F55))
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "Inapakia taarifa za uhakiki...",
+                    color = Color.DarkGray,
+                    fontSize = 14.sp
+                )
+            }
         } else {
+            val (icon, iconTint, iconBg, title, body) = when (status) {
+                "REJECTED" -> Tuple5(
+                    Icons.Default.Cancel,
+                    Color(0xFFC62828),
+                    Color(0xFFFFEBEE),
+                    "Application not approved",
+                    state.teacher?.verificationNotes?.takeIf { it.isNotBlank() }
+                        ?: "Your teacher application wasn't approved. Contact support for details."
+                )
+                "VERIFIED" -> Tuple5(
+                    Icons.Default.CheckCircle,
+                    Color(0xFF1E7F55),
+                    Color(0xFFE8F5E9),
+                    "Application Approved!",
+                    "Your account is verified. You can now access your dashboard and publish materials."
+                )
+                else -> Tuple5(
+                    Icons.Default.HourglassTop,
+                    Color(0xFF1E7F55),
+                    Color(0xFFE8F5E9),
+                    "Verification in progress",
+                    "Our team is reviewing your teacher application. You'll be notified as soon as you're approved — this usually doesn't take long."
+                )
+            }
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -109,14 +118,14 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(28.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Box(
                         modifier = Modifier
                             .size(72.dp)
                             .clip(CircleShape)
-                            .background(iconBgColor),
+                            .background(iconBg),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -127,28 +136,28 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(Modifier.height(20.dp))
 
                     Text(
-                        text = titleText,
+                        text = title,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.DarkGray,
                         textAlign = TextAlign.Center
                     )
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(Modifier.height(10.dp))
 
                     Text(
-                        text = bodyText,
+                        text = body,
                         fontSize = 14.sp,
                         color = Color.Gray,
                         textAlign = TextAlign.Center,
                         lineHeight = 20.sp
                     )
 
-                    if (status == TeacherVerificationStatus.VERIFIED.name || status == "VERIFIED") {
-                        Spacer(modifier = Modifier.height(24.dp))
+                    if (status == "VERIFIED") {
+                        Spacer(Modifier.height(24.dp))
                         GradientButton(
                             text = "Continue to dashboard",
                             onClick = onVerified,
