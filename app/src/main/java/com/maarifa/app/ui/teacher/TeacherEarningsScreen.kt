@@ -74,6 +74,17 @@ fun TeacherEarningsScreen() {
     )
     val state by vm.state.collectAsState()
 
+    // Loading Check
+    if (state.isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color(0xFF1E7F55))
+        }
+        return
+    }
+
     // Payment Setup States
     var selectedMethod by remember { mutableStateOf("MOBILE_MONEY") } // "MOBILE_MONEY" au "BANK"
     val mobileProviders = listOf("M-Pesa", "Airtel Money", "Tigo Pesa", "MixxBy")
@@ -394,7 +405,7 @@ private fun PayoutRow(payout: Payout) {
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = DateUtils.formatDisplay(payout.createdAt),
+                    text = payout.createdAt?.let { DateUtils.formatDisplay(it) } ?: "—",
                     fontSize = 12.sp,
                     color = Color.Gray
                 )
