@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -39,6 +40,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.maarifa.app.di.SimpleViewModelFactory
 import com.maarifa.app.di.maarifaContainer
 import com.maarifa.app.ui.common.GradientButton
+
+private data class VerificationUiConfig(
+    val icon: ImageVector,
+    val iconTint: Color,
+    val iconBackground: Color,
+    val title: String,
+    val body: String
+)
 
 @Composable
 fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
@@ -52,7 +61,7 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
 
     val status = state.teacher?.verificationStatus?.uppercase() ?: "PENDING"
 
-    // Auto-navigate pindi tu akaunti inapokuwa verified
+    // Auto-navigate when account becomes verified
     LaunchedEffect(status) {
         if (status == "VERIFIED") {
             onVerified()
@@ -80,28 +89,28 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
                 )
             }
         } else {
-            val (icon, iconTint, iconBg, title, body) = when (status) {
-                "REJECTED" -> Tuple5(
-                    Icons.Default.Cancel,
-                    Color(0xFFC62828),
-                    Color(0xFFFFEBEE),
-                    "Application not approved",
-                    state.teacher?.verificationNotes?.takeIf { it.isNotBlank() }
+            val uiConfig = when (status) {
+                "REJECTED" -> VerificationUiConfig(
+                    icon = Icons.Default.Cancel,
+                    iconTint = Color(0xFFC62828),
+                    iconBackground = Color(0xFFFFEBEE),
+                    title = "Application not approved",
+                    body = state.teacher?.verificationNotes?.takeIf { it.isNotBlank() }
                         ?: "Your teacher application wasn't approved. Contact support for details."
                 )
-                "VERIFIED" -> Tuple5(
-                    Icons.Default.CheckCircle,
-                    Color(0xFF1E7F55),
-                    Color(0xFFE8F5E9),
-                    "Application Approved!",
-                    "Your account is verified. You can now access your dashboard and publish materials."
+                "VERIFIED" -> VerificationUiConfig(
+                    icon = Icons.Default.CheckCircle,
+                    iconTint = Color(0xFF1E7F55),
+                    iconBackground = Color(0xFFE8F5E9),
+                    title = "Application Approved!",
+                    body = "Your account is verified. You can now access your dashboard and publish materials."
                 )
-                else -> Tuple5(
-                    Icons.Default.HourglassTop,
-                    Color(0xFF1E7F55),
-                    Color(0xFFE8F5E9),
-                    "Verification in progress",
-                    "Our team is reviewing your teacher application. You'll be notified as soon as you're approved — this usually doesn't take long."
+                else -> VerificationUiConfig(
+                    icon = Icons.Default.HourglassTop,
+                    iconTint = Color(0xFF1E7F55),
+                    iconBackground = Color(0xFFE8F5E9),
+                    title = "Verification in progress",
+                    body = "Our team is reviewing your teacher application. You'll be notified as soon as you're approved — this usually doesn't take long."
                 )
             }
 
@@ -125,21 +134,21 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
                         modifier = Modifier
                             .size(72.dp)
                             .clip(CircleShape)
-                            .background(iconBg),
+                            .background(uiConfig.iconBackground),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = icon,
+                            imageVector = uiConfig.icon,
                             contentDescription = null,
                             modifier = Modifier.size(36.dp),
-                            tint = iconTint
+                            tint = uiConfig.iconTint
                         )
                     }
 
                     Spacer(Modifier.height(20.dp))
 
                     Text(
-                        text = title,
+                        text = uiConfig.title,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.DarkGray,
@@ -149,7 +158,7 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
                     Spacer(Modifier.height(10.dp))
 
                     Text(
-                        text = body,
+                        text = uiConfig.body,
                         fontSize = 14.sp,
                         color = Color.Gray,
                         textAlign = TextAlign.Center,
@@ -169,11 +178,3 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
         }
     }
 }
-
-private data class Tuple5<A, B, C, D, E>(
-    val first: A,
-    val second: B,
-    val third: C,
-    val fourth: D,
-    val fifth: E
-)
