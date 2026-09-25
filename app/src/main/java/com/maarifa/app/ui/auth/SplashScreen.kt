@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.maarifa.app.data.model.UserRole
-import com.maarifa.app.navigation.Routes
+import com.maarifa.app.navigation.Screen
 import com.maarifa.app.ui.theme.MaarifaForestDeep
 
 @Composable
@@ -39,15 +39,17 @@ fun SplashScreen(authViewModel: AuthViewModel, navController: NavController) {
         if (state.checkingSession) return@LaunchedEffect
 
         val profile = state.profile
+        val isTeacher = profile?.roleEnum == UserRole.TEACHER || profile?.role.orEmpty().equals("TEACHER", ignoreCase = true)
+
         val destination = when {
-            !state.isSignedIn -> Routes.WELCOME
-            profile == null -> Routes.REGISTER
-            profile.roleEnum == UserRole.TEACHER -> Routes.TEACHER_HOME
-            else -> Routes.STUDENT_HOME
+            !state.isSignedIn -> Screen.Login.route
+            profile == null -> Screen.Register.route
+            isTeacher -> Screen.TeacherPending.route
+            else -> Screen.StudentHome.route
         }
 
         navController.navigate(destination) {
-            popUpTo(Routes.SPLASH) { inclusive = true }
+            popUpTo(Screen.Splash.route) { inclusive = true }
         }
     }
 
