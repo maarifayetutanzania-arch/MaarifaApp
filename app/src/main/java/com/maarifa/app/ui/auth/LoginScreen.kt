@@ -97,14 +97,13 @@ fun LoginScreen(
     val state by authViewModel.state.collectAsState()
     var tab by remember { mutableStateOf(LoginTab.EMAIL) }
 
+    // MAREKEBISHO HAPA: Elekeza Teacher kwenda TeacherPending badala ya TeacherHome
     LaunchedEffect(state.isSignedIn, state.profile, state.isSubmitting) {
         if (state.isSignedIn && !state.isSubmitting) {
-            val dest = if (state.profile == null) {
-                Screen.Register.route
-            } else if (state.profile!!.roleEnum == UserRole.TEACHER) {
-                Screen.TeacherHome.route
-            } else {
-                Screen.StudentHome.route
+            val dest = when {
+                state.profile == null -> Screen.Register.route
+                state.profile!!.roleEnum == UserRole.TEACHER -> Screen.TeacherPending.route
+                else -> Screen.StudentHome.route
             }
             navController.navigate(dest) {
                 popUpTo(Screen.Login.route) { inclusive = true }
@@ -531,4 +530,3 @@ private fun PhoneLoginForm(
         }
     }
 }
-
