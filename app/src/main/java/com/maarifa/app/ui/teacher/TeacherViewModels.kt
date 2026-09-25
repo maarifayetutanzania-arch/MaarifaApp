@@ -171,6 +171,7 @@ class TeacherEarningsViewModel(
     private val payoutRepository: PayoutRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
+
     private val _state = MutableStateFlow(TeacherEarningsUiState())
     val state: StateFlow<TeacherEarningsUiState> = _state.asStateFlow()
 
@@ -181,30 +182,46 @@ class TeacherEarningsViewModel(
                 teacherRepository.observeTeacher(uid),
                 payoutRepository.observePayouts(uid)
             ) { teacherRes, payoutRes ->
-                val teacher = (teacherRes as? Resource.Success)?.data ?: Teacher(teacherId = uid, userId = uid)
-                val payouts = (payoutRes as? Resource.Success)?.data ?: emptyList()
-                val isLoading = teacherRes is Resource.Loading || payoutRes is Resource.Loading
-                val error = (teacherRes as? Resource.Error)?.message ?: (payoutRes as? Resource.Error)?.message
+                val teacher = (teacherRes as? Resource.Success)?.data
+                    ?: Teacher(teacherId = uid, userId = uid)
 
-                _state.value.copy(
+                val payouts = (payoutRes as? Resource.Success)?.data ?: emptyList()
+
+                val isLoading = teacherRes is Resource.Loading || payoutRes is Resource.Loading
+
+                val error = (teacherRes as? Resource.Error)?.message
+                    ?: (payoutRes as? Resource.Error)?.message
+
+                // Tengeneza state mpya (si copy ya zamani)
+                TeacherEarningsUiState(
                     isLoading = isLoading,
                     teacher = teacher,
                     payouts = payouts,
-                    errorMessage = error
+                    errorMessage = error,
+                    isSavingPayment = _state.value.isSavingPayment,
+                    saveSuccessMessage = _state.value.saveSuccessMessage
                 )
-            }.onEach { updatedState ->
-                _state.value = updatedState
+            }.onEach { updated ->
+                _state.value = updated
             }.launchIn(viewModelScope)
         } else {
-            _state.update { it.copy(isLoading = false, errorMessage = "User session expired.") }
+            _state.update {
+                it.copy(isLoading = false, errorMessage = "User session expired.")
+            }
         }
     }
 
     fun savePaymentInfo(method: String, provider: String, accountNumber: String) {
         val uid = authRepository.currentUserId ?: return
         viewModelScope.launch {
-            _state.update { it.copy(isSavingPayment = true, saveSuccessMessage = null, errorMessage = null) }
-            
+            _state.update {
+                it.copy(
+                    isSavingPayment = true,
+                    saveSuccessMessage = null,
+                    errorMessage = null
+                )
+            }
+
             val result = teacherRepository.updateTeacherPaymentInfo(
                 teacherId = uid,
                 paymentMethod = method,
@@ -214,19 +231,19 @@ class TeacherEarningsViewModel(
 
             when (result) {
                 is Resource.Success -> {
-                    _state.update { 
+                    _state.update {
                         it.copy(
-                            isSavingPayment = false, 
+                            isSavingPayment = false,
                             saveSuccessMessage = "Taarifa za malipo zimehifadhiwa kikamilifu!"
-                        ) 
+                        )
                     }
                 }
                 is Resource.Error -> {
-                    _state.update { 
+                    _state.update {
                         it.copy(
-                            isSavingPayment = false, 
-                            errorMessage = result.message 
-                        ) 
+                            isSavingPayment = false,
+                            errorMessage = result.message
+                        )
                     }
                 }
                 Resource.Loading -> {}
