@@ -23,7 +23,6 @@ import com.maarifa.app.ui.auth.AuthViewModelFactory
 import com.maarifa.app.ui.auth.LoginScreen
 import com.maarifa.app.ui.auth.OtpVerificationScreen
 import com.maarifa.app.ui.auth.RegisterScreen
-import com.maarifa.app.ui.auth.SplashScreen
 import com.maarifa.app.ui.auth.WelcomeScreen
 import com.maarifa.app.ui.student.StudentHomeScreen
 import com.maarifa.app.ui.teacher.TeacherHomeScreen
@@ -60,25 +59,29 @@ fun NavGraph(
     ) {
         // -------------------- SPLASH --------------------
         composable(Screen.Splash.route) {
-            LaunchedEffect(state.checkingSession, state.isSignedIn, state.isEmailVerified, state.profile) {
-                if (!state.checkingSession) {
-                    val target = when {
-                        !state.isSignedIn -> Screen.Welcome.route
-                        state.profile == null -> Screen.Register.route
-                        // Teacher ALWAYS goes to Pending first
-                        state.profile?.role == "TEACHER" || state.profile?.roleEnum == UserRole.TEACHER -> {
-                            Screen.TeacherPending.route
-                        }
-                        else -> Screen.StudentHome.route
-                    }
+            LaunchedEffect(
+                state.checkingSession,
+                state.isSignedIn,
+                state.profile
+            ) {
+                if (state.checkingSession) return@LaunchedEffect
 
-                    navController.navigate(target) {
-                        popUpTo(Screen.Splash.route) { inclusive = true }
+                val target = when {
+                    !state.isSignedIn -> Screen.Welcome.route
+                    state.profile == null -> Screen.Register.route
+                    // Teacher → Pending (Pending auto-redirects to Home if VERIFIED)
+                    state.profile?.role == "TEACHER" ||
+                        state.profile?.roleEnum == UserRole.TEACHER -> {
+                        Screen.TeacherPending.route
                     }
+                    else -> Screen.StudentHome.route
+                }
+
+                navController.navigate(target) {
+                    popUpTo(Screen.Splash.route) { inclusive = true }
                 }
             }
 
-            // Unaweza kutumia SplashScreen yako hapa badala ya Box
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -90,8 +93,12 @@ fun NavGraph(
         // -------------------- WELCOME --------------------
         composable(Screen.Welcome.route) {
             WelcomeScreen(
-                onNavigateToLogin = { navController.navigate(Screen.Login.route) },
-                onNavigateToSignUp = { navController.navigate(Screen.Register.route) }
+                onNavigateToLogin = {
+                    navController.navigate(Screen.Login.route)
+                },
+                onNavigateToSignUp = {
+                    navController.navigate(Screen.Register.route)
+                }
             )
         }
 
@@ -111,11 +118,10 @@ fun NavGraph(
                 },
                 onRegisterSuccess = { role ->
                     val target = if (role == UserRole.TEACHER) {
-                        Screen.TeacherPending.route          // ← MUHIMU
+                        Screen.TeacherPending.route
                     } else {
                         Screen.StudentHome.route
                     }
-
                     navController.navigate(target) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
@@ -130,20 +136,24 @@ fun NavGraph(
         // -------------------- OTP --------------------
         composable(
             route = Screen.OtpVerification.route,
-            arguments = listOf(navArgument("phoneNumber") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("phoneNumber") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
-            val phoneNumber = backStackEntry.arguments?.getString("phoneNumber").orEmpty()
+            val phoneNumber =
+                backStackEntry.arguments?.getString("phoneNumber").orEmpty()
 
             OtpVerificationScreen(
                 phoneNumber = phoneNumber,
                 onVerificationSuccess = {
-                    val target = if (state.profile?.role == "TEACHER" || 
-                                     state.profile?.roleEnum == UserRole.TEACHER) {
+                    val target = if (
+                        state.profile?.role == "TEACHER" ||
+                        state.profile?.roleEnum == UserRole.TEACHER
+                    ) {
                         Screen.TeacherPending.route
                     } else {
                         Screen.StudentHome.route
                     }
-
                     navController.navigate(target) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
