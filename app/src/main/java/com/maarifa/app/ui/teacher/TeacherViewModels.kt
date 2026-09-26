@@ -16,7 +16,6 @@ import com.maarifa.app.util.Resource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -51,7 +50,6 @@ class TeacherDashboardViewModel(
                 _state.update { currentState ->
                     when (res) {
                         is Resource.Success -> {
-                            // FALLBACK INAINGIA HAPA: Kama res.data ni null, tunatengeneza Teacher ya msingi badala ya ku-crash
                             val teacherData = res.data ?: Teacher(teacherId = uid, userId = uid)
                             currentState.copy(isLoading = false, teacher = teacherData, errorMessage = null)
                         }
@@ -178,31 +176,28 @@ class TeacherEarningsViewModel(
     init {
         val uid = authRepository.currentUserId
         if (uid != null) {
-            combine(
-                teacherRepository.observeTeacher(uid),
-                payoutRepository.observePayouts(uid)
-            ) { teacherRes, payoutRes ->
-                val teacher = (teacherRes as? Resource.Success)?.data
-                    ?: Teacher(teacherId = uid, userId = uid)
-
-                val payouts = (payoutRes as? Resource.Success)?.data ?: emptyList()
-
-                val isLoading = teacherRes is Resource.Loading || payoutRes is Resource.Loading
-
-                val error = (teacherRes as? Resource.Error)?.message
-                    ?: (payoutRes as? Resource.Error)?.message
-
-                // Tengeneza state mpya (si copy ya zamani)
-                TeacherEarningsUiState(
-                    isLoading = isLoading,
-                    teacher = teacher,
-                    payouts = payouts,
-                    errorMessage = error,
-                    isSavingPayment = _state.value.isSavingPayment,
-                    saveSuccessMessage = _state.value.saveSuccessMessage
-                )
-            }.onEach { updated ->
-                _state.value = updated
+            // TEST: observe teacher TU (bila payouts)
+            teacherRepository.observeTeacher(uid).onEach { res ->
+                when (res) {
+                    is Resource.Success -> {
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                teacher = res.data ?: Teacher(teacherId = uid, userId = uid),
+                                payouts = emptyList(),
+                                errorMessage = null
+                            )
+                        }
+                    }
+                    is Resource.Error -> {
+                        _state.update {
+                            it.copy(isLoading = false, errorMessage = res.message)
+                        }
+                    }
+                    Resource.Loading -> {
+                        _state.update { it.copy(isLoading = true) }
+                    }
+                }
             }.launchIn(viewModelScope)
         } else {
             _state.update {
@@ -212,42 +207,6 @@ class TeacherEarningsViewModel(
     }
 
     fun savePaymentInfo(method: String, provider: String, accountNumber: String) {
-        val uid = authRepository.currentUserId ?: return
-        viewModelScope.launch {
-            _state.update {
-                it.copy(
-                    isSavingPayment = true,
-                    saveSuccessMessage = null,
-                    errorMessage = null
-                )
-            }
-
-            val result = teacherRepository.updateTeacherPaymentInfo(
-                teacherId = uid,
-                paymentMethod = method,
-                provider = provider,
-                accountNumber = accountNumber
-            )
-
-            when (result) {
-                is Resource.Success -> {
-                    _state.update {
-                        it.copy(
-                            isSavingPayment = false,
-                            saveSuccessMessage = "Taarifa za malipo zimehifadhiwa kikamilifu!"
-                        )
-                    }
-                }
-                is Resource.Error -> {
-                    _state.update {
-                        it.copy(
-                            isSavingPayment = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-                Resource.Loading -> {}
-            }
-        }
+        // leave empty for now
     }
 }
