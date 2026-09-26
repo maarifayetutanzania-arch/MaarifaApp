@@ -54,7 +54,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.maarifa.app.data.model.Payout
 import com.maarifa.app.di.SimpleViewModelFactory
 import com.maarifa.app.di.maarifaContainer
-import com.maarifa.app.ui.common.EmptyState
 import com.maarifa.app.ui.common.SectionHeader
 import com.maarifa.app.ui.common.StatusPill
 import com.maarifa.app.util.DateUtils
@@ -315,7 +314,12 @@ fun TeacherEarningsScreen() {
 
                 if (state.payouts.isEmpty()) {
                     item {
-                        EmptyState("No payouts generated yet.")
+                        Text(
+                            text = "No payouts generated yet.",
+                            fontSize = 14.sp,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(vertical = 24.dp)
+                        )
                     }
                 } else {
                     items(state.payouts, key = { it.payoutId }) { payout ->
