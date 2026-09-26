@@ -14,17 +14,25 @@ class PayoutRepository(
 ) {
     private val collection get() = firestore.collection(FirestorePaths.PAYOUTS)
 
-    /** All payout records ever generated for this teacher (by the scheduled Cloud
-     * Function), newest first — teachers see this as a read-only earnings history. */
+    /**
+     * All payout records ever generated for this teacher (by the scheduled Cloud
+     * Function), newest first — teachers see this as a read-only earnings history.
+     */
     fun observePayouts(teacherId: String): Flow<Resource<List<Payout>>> = callbackFlow {
-        val registration = collection.whereEqualTo("teacherId", teacherId)
+        val registration = collection
+            .whereEqualTo("teacherId", teacherId)
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     trySend(Resource.Error(error.message ?: "Failed to load payouts"))
                     return@addSnapshotListener
                 }
-                trySend(Resource.Success(snapshot?.toObjects(Payout::class.java).orEmpty()))
+                try {
+                    val list = snapshot?.toObjects(Payout::class.java).orEmpty()
+                    trySend(Resource.Success(list))
+                } catch (e: Exception) {
+                    trySend(Resource.Error("Could not parse payouts: ${e.message}"))
+                }
             }
         awaitClose { registration.remove() }
     }
