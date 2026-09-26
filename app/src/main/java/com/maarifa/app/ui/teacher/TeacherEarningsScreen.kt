@@ -117,7 +117,6 @@ fun TeacherEarningsScreen() {
                     )
                 }
 
-                // Balance Card
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -163,7 +162,6 @@ fun TeacherEarningsScreen() {
                     }
                 }
 
-                // Payment Info Card
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
