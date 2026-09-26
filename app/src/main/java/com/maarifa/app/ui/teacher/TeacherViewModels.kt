@@ -16,6 +16,7 @@ import com.maarifa.app.util.Resource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -34,6 +35,7 @@ class TeacherDashboardViewModel(
     private val teacherRepository: TeacherRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
+
     private val _state = MutableStateFlow(TeacherDashboardUiState())
     val state: StateFlow<TeacherDashboardUiState> = _state.asStateFlow()
 
@@ -50,16 +52,26 @@ class TeacherDashboardViewModel(
                 _state.update { currentState ->
                     when (res) {
                         is Resource.Success -> {
-                            val teacherData = res.data ?: Teacher(teacherId = uid, userId = uid)
-                            currentState.copy(isLoading = false, teacher = teacherData, errorMessage = null)
+                            val teacherData =
+                                res.data ?: Teacher(teacherId = uid, userId = uid)
+                            currentState.copy(
+                                isLoading = false,
+                                teacher = teacherData,
+                                errorMessage = null
+                            )
                         }
-                        is Resource.Error -> currentState.copy(isLoading = false, errorMessage = res.message)
+                        is Resource.Error -> currentState.copy(
+                            isLoading = false,
+                            errorMessage = res.message
+                        )
                         Resource.Loading -> currentState.copy(isLoading = true)
                     }
                 }
             }.launchIn(viewModelScope)
         } else {
-            _state.update { it.copy(isLoading = false, errorMessage = "User session expired.") }
+            _state.update {
+                it.copy(isLoading = false, errorMessage = "User session expired.")
+            }
         }
     }
 
@@ -79,6 +91,7 @@ class UploadMaterialViewModel(
     private val materialRepository: MaterialRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
+
     private val _state = MutableStateFlow(UploadUiState())
     val state: StateFlow<UploadUiState> = _state.asStateFlow()
 
@@ -109,8 +122,10 @@ class UploadMaterialViewModel(
             }
 
             _state.value = when (result) {
-                is Resource.Success -> UploadUiState(successMessage = "Uploaded — pending admin review.")
-                is Resource.Error -> UploadUiState(errorMessage = result.message)
+                is Resource.Success ->
+                    UploadUiState(successMessage = "Uploaded — pending admin review.")
+                is Resource.Error ->
+                    UploadUiState(errorMessage = result.message)
                 Resource.Loading -> _state.value
             }
         }
@@ -133,6 +148,7 @@ class TeacherMaterialsViewModel(
     private val materialRepository: MaterialRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
+
     private val _state = MutableStateFlow(TeacherMaterialsUiState())
     val state: StateFlow<TeacherMaterialsUiState> = _state.asStateFlow()
 
@@ -141,14 +157,23 @@ class TeacherMaterialsViewModel(
             materialRepository.observeTeacherMaterials(uid).onEach { res ->
                 _state.update { currentState ->
                     when (res) {
-                        is Resource.Success -> currentState.copy(isLoading = false, materials = res.data ?: emptyList(), errorMessage = null)
-                        is Resource.Error -> currentState.copy(isLoading = false, errorMessage = res.message)
+                        is Resource.Success -> currentState.copy(
+                            isLoading = false,
+                            materials = res.data ?: emptyList(),
+                            errorMessage = null
+                        )
+                        is Resource.Error -> currentState.copy(
+                            isLoading = false,
+                            errorMessage = res.message
+                        )
                         Resource.Loading -> currentState.copy(isLoading = true)
                     }
                 }
             }.launchIn(viewModelScope)
         } ?: run {
-            _state.update { it.copy(isLoading = false, errorMessage = "User session expired.") }
+            _state.update {
+                it.copy(isLoading = false, errorMessage = "User session expired.")
+            }
         }
     }
 }
@@ -176,28 +201,28 @@ class TeacherEarningsViewModel(
     init {
         val uid = authRepository.currentUserId
         if (uid != null) {
-            // TEST: observe teacher TU (bila payouts)
-            teacherRepository.observeTeacher(uid).onEach { res ->
-                when (res) {
-                    is Resource.Success -> {
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                teacher = res.data ?: Teacher(teacherId = uid, userId = uid),
-                                payouts = emptyList(),
-                                errorMessage = null
-                            )
-                        }
-                    }
-                    is Resource.Error -> {
-                        _state.update {
-                            it.copy(isLoading = false, errorMessage = res.message)
-                        }
-                    }
-                    Resource.Loading -> {
-                        _state.update { it.copy(isLoading = true) }
-                    }
-                }
+            combine(
+                teacherRepository.observeTeacher(uid),
+                payoutRepository.observePayouts(uid)
+            ) { teacherRes, payoutRes ->
+                val teacher = (teacherRes as? Resource.Success)?.data
+                    ?: Teacher(teacherId = uid, userId = uid)
+                val payouts = (payoutRes as? Resource.Success)?.data ?: emptyList()
+                val isLoading =
+                    teacherRes is Resource.Loading || payoutRes is Resource.Loading
+                val error = (teacherRes as? Resource.Error)?.message
+                    ?: (payoutRes as? Resource.Error)?.message
+
+                TeacherEarningsUiState(
+                    isLoading = isLoading,
+                    teacher = teacher,
+                    payouts = payouts,
+                    errorMessage = error,
+                    isSavingPayment = _state.value.isSavingPayment,
+                    saveSuccessMessage = _state.value.saveSuccessMessage
+                )
+            }.onEach { updated ->
+                _state.value = updated
             }.launchIn(viewModelScope)
         } else {
             _state.update {
@@ -207,6 +232,42 @@ class TeacherEarningsViewModel(
     }
 
     fun savePaymentInfo(method: String, provider: String, accountNumber: String) {
-        // leave empty for now
+        val uid = authRepository.currentUserId ?: return
+        viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    isSavingPayment = true,
+                    saveSuccessMessage = null,
+                    errorMessage = null
+                )
+            }
+
+            val result = teacherRepository.updateTeacherPaymentInfo(
+                teacherId = uid,
+                paymentMethod = method,
+                provider = provider,
+                accountNumber = accountNumber
+            )
+
+            when (result) {
+                is Resource.Success -> {
+                    _state.update {
+                        it.copy(
+                            isSavingPayment = false,
+                            saveSuccessMessage = "Taarifa za malipo zimehifadhiwa kikamilifu!"
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _state.update {
+                        it.copy(
+                            isSavingPayment = false,
+                            errorMessage = result.message
+                        )
+                    }
+                }
+                Resource.Loading -> Unit
+            }
+        }
     }
 }
