@@ -91,217 +91,236 @@ fun TeacherEarningsScreen() {
     )
 
     if (state.isLoading) {
-        Box(Modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
             CircularProgressIndicator(color = primaryGreen)
         }
-        return
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundGradient)
-    ) {
-        LazyColumn(
+    } else {
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .background(backgroundGradient)
         ) {
-            item {
-                Text(
-                    text = "Earnings",
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = darkGreen
-                )
-            }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    Text(
+                        text = "Earnings",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = darkGreen
+                    )
+                }
 
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(balanceCardGradient)
-                            .padding(20.dp)
+                // Balance Card
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                     ) {
-                        Column {
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.2f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AccountBalanceWallet,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "Current Balance",
-                                fontSize = 13.sp,
-                                color = Color.White.copy(alpha = 0.85f)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "${state.teacher?.earningsBalanceTzs ?: 0} TZS",
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
-                    }
-                }
-            }
-
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-                    border = BorderStroke(1.dp, Color(0xFFE0E0E0))
-                ) {
-                    Column(modifier = Modifier.padding(18.dp)) {
-                        Text(
-                            text = "Taarifa za Kupokea Malipo",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = darkGreen
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                RadioButton(
-                                    selected = selectedMethod == "MOBILE_MONEY",
-                                    onClick = {
-                                        selectedMethod = "MOBILE_MONEY"
-                                        selectedProvider = mobileProviders[0]
-                                    },
-                                    colors = RadioButtonDefaults.colors(selectedColor = primaryGreen)
-                                )
-                                Text("Mobile Money", fontSize = 14.sp)
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                RadioButton(
-                                    selected = selectedMethod == "BANK",
-                                    onClick = {
-                                        selectedMethod = "BANK"
-                                        selectedProvider = bankProviders[0]
-                                    },
-                                    colors = RadioButtonDefaults.colors(selectedColor = primaryGreen)
-                                )
-                                Text("Bank", fontSize = 14.sp)
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        val activeProviders =
-                            if (selectedMethod == "MOBILE_MONEY") mobileProviders else bankProviders
-
-                        ExposedDropdownMenuBox(
-                            expanded = isDropdownExpanded,
-                            onExpandedChange = { isDropdownExpanded = !isDropdownExpanded }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(balanceCardGradient)
+                                .padding(20.dp)
                         ) {
-                            OutlinedTextField(
-                                value = selectedProvider,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text(if (selectedMethod == "MOBILE_MONEY") "Mtandao" else "Benki") },
-                                trailingIcon = {
-                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
-                                },
-                                modifier = Modifier.menuAnchor().fillMaxWidth()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = isDropdownExpanded,
-                                onDismissRequest = { isDropdownExpanded = false }
-                            ) {
-                                activeProviders.forEach { provider ->
-                                    DropdownMenuItem(
-                                        text = { Text(provider) },
-                                        onClick = {
-                                            selectedProvider = provider
-                                            isDropdownExpanded = false
-                                        }
+                            Column {
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountBalanceWallet,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        OutlinedTextField(
-                            value = accountNumber,
-                            onValueChange = { accountNumber = it },
-                            label = {
+                                Spacer(modifier = Modifier.height(12.dp))
                                 Text(
-                                    if (selectedMethod == "MOBILE_MONEY") "Namba ya Simu"
-                                    else "Namba ya Akaunti"
+                                    text = "Current Balance",
+                                    fontSize = 13.sp,
+                                    color = Color.White.copy(alpha = 0.85f)
                                 )
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        state.saveSuccessMessage?.let {
-                            Text(text = it, color = primaryGreen, fontSize = 13.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                        state.errorMessage?.let {
-                            Text(text = it, color = Color.Red, fontSize = 13.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-
-                        Button(
-                            onClick = {
-                                if (accountNumber.isNotBlank()) {
-                                    vm.savePaymentInfo(
-                                        method = selectedMethod,
-                                        provider = selectedProvider,
-                                        accountNumber = accountNumber
-                                    )
-                                }
-                            },
-                            enabled = accountNumber.isNotBlank() && !state.isSavingPayment,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = primaryGreen)
-                        ) {
-                            if (state.isSavingPayment) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "${state.teacher?.earningsBalanceTzs ?: 0} TZS",
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
                                 )
-                            } else {
-                                Text("Hifadhi Taarifa za Malipo", fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
                 }
-            }
 
-            item { SectionHeader("Payout History") }
+                // Payment Info Card
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+                        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                    ) {
+                        Column(modifier = Modifier.padding(18.dp)) {
+                            Text(
+                                text = "Taarifa za Kupokea Malipo",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = darkGreen
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
 
-            if (state.payouts.isEmpty()) {
-                item { EmptyState("No payouts generated yet.") }
-            } else {
-                items(state.payouts, key = { it.payoutId }) { payout ->
-                    PayoutRow(payout = payout)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    RadioButton(
+                                        selected = selectedMethod == "MOBILE_MONEY",
+                                        onClick = {
+                                            selectedMethod = "MOBILE_MONEY"
+                                            selectedProvider = mobileProviders[0]
+                                        },
+                                        colors = RadioButtonDefaults.colors(selectedColor = primaryGreen)
+                                    )
+                                    Text("Mobile Money", fontSize = 14.sp)
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    RadioButton(
+                                        selected = selectedMethod == "BANK",
+                                        onClick = {
+                                            selectedMethod = "BANK"
+                                            selectedProvider = bankProviders[0]
+                                        },
+                                        colors = RadioButtonDefaults.colors(selectedColor = primaryGreen)
+                                    )
+                                    Text("Bank", fontSize = 14.sp)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            val activeProviders =
+                                if (selectedMethod == "MOBILE_MONEY") mobileProviders else bankProviders
+
+                            ExposedDropdownMenuBox(
+                                expanded = isDropdownExpanded,
+                                onExpandedChange = { isDropdownExpanded = !isDropdownExpanded }
+                            ) {
+                                OutlinedTextField(
+                                    value = selectedProvider,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = {
+                                        Text(
+                                            if (selectedMethod == "MOBILE_MONEY") "Mtandao" else "Benki"
+                                        )
+                                    },
+                                    trailingIcon = {
+                                        ExposedDropdownMenuDefaults.TrailingIcon(
+                                            expanded = isDropdownExpanded
+                                        )
+                                    },
+                                    modifier = Modifier
+                                        .menuAnchor()
+                                        .fillMaxWidth()
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = isDropdownExpanded,
+                                    onDismissRequest = { isDropdownExpanded = false }
+                                ) {
+                                    activeProviders.forEach { provider ->
+                                        DropdownMenuItem(
+                                            text = { Text(provider) },
+                                            onClick = {
+                                                selectedProvider = provider
+                                                isDropdownExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedTextField(
+                                value = accountNumber,
+                                onValueChange = { accountNumber = it },
+                                label = {
+                                    Text(
+                                        if (selectedMethod == "MOBILE_MONEY") "Namba ya Simu"
+                                        else "Namba ya Akaunti"
+                                    )
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            state.saveSuccessMessage?.let { msg ->
+                                Text(text = msg, color = primaryGreen, fontSize = 13.sp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                            state.errorMessage?.let { err ->
+                                Text(text = err, color = Color.Red, fontSize = 13.sp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            Button(
+                                onClick = {
+                                    if (accountNumber.isNotBlank()) {
+                                        vm.savePaymentInfo(
+                                            method = selectedMethod,
+                                            provider = selectedProvider,
+                                            accountNumber = accountNumber
+                                        )
+                                    }
+                                },
+                                enabled = accountNumber.isNotBlank() && !state.isSavingPayment,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = primaryGreen)
+                            ) {
+                                if (state.isSavingPayment) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Text(
+                                        text = "Hifadhi Taarifa za Malipo",
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    SectionHeader("Payout History")
+                }
+
+                if (state.payouts.isEmpty()) {
+                    item {
+                        EmptyState("No payouts generated yet.")
+                    }
+                } else {
+                    items(state.payouts, key = { it.payoutId }) { payout ->
+                        PayoutRow(payout = payout)
+                    }
                 }
             }
         }
