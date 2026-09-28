@@ -41,18 +41,19 @@ class TeacherDashboardViewModel(
 
     init {
         val uid = authRepository.currentUserId
-        if (!uid.isNull夾Blank()) {
+        if (!uid.isNullOrBlank()) {
+            val currentUid: String = uid
             viewModelScope.launch {
-                val res = authRepository.fetchUserProfile(uid)
+                val res = authRepository.fetchUserProfile(currentUid)
                 if (res is Resource.Success) {
                     _state.update { it.copy(user = res.data) }
                 }
             }
-            teacherRepository.observeTeacher(uid).onEach { res ->
+            teacherRepository.observeTeacher(currentUid).onEach { res ->
                 _state.update { currentState ->
                     when (res) {
                         is Resource.Success -> {
-                            val teacherData = res.data ?: Teacher(teacherId = uid, userId = uid)
+                            val teacherData = res.data ?: Teacher(teacherId = currentUid, userId = currentUid)
                             currentState.copy(
                                 isLoading = false,
                                 teacher = teacherData,
@@ -154,7 +155,8 @@ class TeacherMaterialsViewModel(
     init {
         val uid = authRepository.currentUserId
         if (!uid.isNullOrBlank()) {
-            materialRepository.observeTeacherMaterials(uid).onEach { res ->
+            val currentUid: String = uid
+            materialRepository.observeTeacherMaterials(currentUid).onEach { res ->
                 _state.update { currentState ->
                     when (res) {
                         is Resource.Success -> currentState.copy(
@@ -201,13 +203,14 @@ class TeacherEarningsViewModel(
     init {
         val uid = authRepository.currentUserId
         if (!uid.isNullOrBlank()) {
+            val currentUid: String = uid
             combine(
-                teacherRepository.observeTeacher(uid),
-                payoutRepository.observePayouts(uid)
+                teacherRepository.observeTeacher(currentUid),
+                payoutRepository.observePayouts(currentUid)
             ) { teacherRes, payoutRes ->
                 val teacherData = when (teacherRes) {
-                    is Resource.Success -> teacherRes.data ?: Teacher(teacherId = uid, userId = uid)
-                    else -> Teacher(teacherId = uid, userId = uid)
+                    is Resource.Success -> teacherRes.data ?: Teacher(teacherId = currentUid, userId = currentUid)
+                    else -> Teacher(teacherId = currentUid, userId = currentUid)
                 }
 
                 val payoutsData = when (payoutRes) {
