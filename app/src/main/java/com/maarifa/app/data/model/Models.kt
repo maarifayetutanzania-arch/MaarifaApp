@@ -30,11 +30,11 @@ data class User(
 data class Teacher(
     @DocumentId var teacherId: String = "", // same value as userId
     var userId: String = "",
-    
+
     @get:PropertyName("verificationStatus")
     @set:PropertyName("verificationStatus")
     var verificationStatus: String = TeacherVerificationStatus.PENDING.name,
-    
+
     var verificationNotes: String = "",
     var totalUploads: Int = 0,
     var totalReaders: Int = 0,
@@ -49,16 +49,18 @@ data class Teacher(
     @ServerTimestamp var createdAt: Date? = null
 ) {
     /**
-     * Fallback setter for Firestore documents that might use 'status' 
-     * instead of 'verificationStatus'.
+     * Helper property inayosoma 'status' pale Firestore inapokuwa na field ya 'status'
+     * badala ya 'verificationStatus' bila kuingiliana na Kotlin compiler.
      */
     @get:PropertyName("status")
     @set:PropertyName("status")
-    set(value) {
-        if (!value.isNullOrBlank()) {
-            this.verificationStatus = value
+    var status: String
+        get() = verificationStatus
+        set(value) {
+            if (value.isNotBlank()) {
+                verificationStatus = value
+            }
         }
-    }
 
     /**
      * Single source of truth checking whether the teacher is verified/approved.
