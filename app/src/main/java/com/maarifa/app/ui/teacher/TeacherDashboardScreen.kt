@@ -69,8 +69,9 @@ fun TeacherDashboardScreen() {
         LoadingState()
     } else {
         val teacher = state.teacher
-        val rawStatus = teacher?.verificationStatus?.uppercase() ?: "PENDING"
-        val isVerified = rawStatus == "VERIFIED" || rawStatus == "APPROVED"
+        // Inakagua idhini kwa kutumia logic yetu mpya ya data model
+        val isVerified = teacher?.isApproved == true
+        val rawStatus = teacher?.verificationStatus?.uppercase()?.trim() ?: "PENDING"
 
         Box(
             modifier = Modifier
@@ -83,6 +84,7 @@ fun TeacherDashboardScreen() {
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp, vertical = 20.dp)
             ) {
+                // Hujambo/Welcome Header
                 Text(
                     text = "Welcome back${
                         state.user?.fullName?.let { ", ${it.split(" ").first()}" } ?: ""
@@ -93,7 +95,7 @@ fun TeacherDashboardScreen() {
                 )
 
                 if (isVerified) {
-                    // ---------------- DASHBOARD CONTENT YA WALIMU WALIO-VERIFY ----------------
+                    // ---------------- DASHBOARD KUU YA WALIMU WALIOTHIBITISHWA ----------------
                     Text(
                         text = "Here's how your materials are performing.",
                         fontSize = 14.sp,
@@ -101,6 +103,7 @@ fun TeacherDashboardScreen() {
                         modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
                     )
 
+                    // Mstari wa 1 wa Takwimu: Uploads & Readers
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -121,6 +124,7 @@ fun TeacherDashboardScreen() {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    // Mstari wa 2 wa Takwimu: Engagement & Balance
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -141,6 +145,7 @@ fun TeacherDashboardScreen() {
 
                     Spacer(modifier = Modifier.height(20.dp))
 
+                    // Kadi ya Maelezo / Notice Banner
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
@@ -180,17 +185,19 @@ fun TeacherDashboardScreen() {
                         }
                     }
                 } else {
-                    // ---------------- CARD YA WALIMU AMBAO BADO HAWANA VERIFICATION ----------------
+                    // ---------------- KADI YA WALIMU AMBAO BADO HAWANA VERIFICATION ----------------
                     Spacer(modifier = Modifier.height(24.dp))
                     VerificationPendingCard(status = rawStatus)
                 }
 
+                // Onyesha Error Ikitokea
                 state.errorMessage?.let { err ->
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = err,
                         color = Color.Red,
-                        fontSize = 13.sp
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
@@ -200,6 +207,8 @@ fun TeacherDashboardScreen() {
 
 @Composable
 private fun VerificationPendingCard(status: String) {
+    val isRejected = status == "REJECTED"
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -231,7 +240,7 @@ private fun VerificationPendingCard(status: String) {
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = if (status == "REJECTED") "Maombi Yamekataliwa" else "Verification in progress",
+                text = if (isRejected) "Maombi Yamekataliwa" else "Verification in progress",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1B5E20)
@@ -240,8 +249,8 @@ private fun VerificationPendingCard(status: String) {
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = if (status == "REJECTED")
-                    "Samahani, maombi yako hayajathibitishwa. Wasiliana na usaidizi kwa maelezo zaidi."
+                text = if (isRejected)
+                    "Samahani, maombi yako ya ualimu hayajathibitishwa. Tafadhali wasiliana na usaidizi (support) kwa maelezo zaidi."
                 else
                     "Our team is reviewing your teacher application. You'll be notified as soon as you're approved — this usually doesn't take long.",
                 fontSize = 14.sp,
