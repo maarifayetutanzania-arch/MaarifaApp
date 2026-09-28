@@ -69,7 +69,6 @@ fun NavGraph(
                 val target = when {
                     !state.isSignedIn -> Screen.Welcome.route
                     state.profile == null -> Screen.Register.route
-                    // Teacher → Pending (Pending auto-redirects to Home if VERIFIED)
                     state.profile?.role == "TEACHER" ||
                         state.profile?.roleEnum == UserRole.TEACHER -> {
                         Screen.TeacherPending.route
@@ -123,7 +122,7 @@ fun NavGraph(
                         Screen.StudentHome.route
                     }
                     navController.navigate(target) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
+                        popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 },
                 onNavigateToOtp = { phone ->
@@ -140,8 +139,7 @@ fun NavGraph(
                 navArgument("phoneNumber") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val phoneNumber =
-                backStackEntry.arguments?.getString("phoneNumber").orEmpty()
+            val phoneNumber = backStackEntry.arguments?.getString("phoneNumber").orEmpty()
 
             OtpVerificationScreen(
                 phoneNumber = phoneNumber,
@@ -155,7 +153,7 @@ fun NavGraph(
                         Screen.StudentHome.route
                     }
                     navController.navigate(target) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
+                        popUpTo(Screen.OtpVerification.route) { inclusive = true }
                     }
                 },
                 authViewModel = authViewModel
