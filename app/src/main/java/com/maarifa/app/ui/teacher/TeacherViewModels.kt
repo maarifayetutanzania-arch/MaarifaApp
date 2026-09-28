@@ -41,7 +41,7 @@ class TeacherDashboardViewModel(
 
     init {
         val uid = authRepository.currentUserId
-        if (uid != null) {
+        if (!uid.isNull夾Blank()) {
             viewModelScope.launch {
                 val res = authRepository.fetchUserProfile(uid)
                 if (res is Resource.Success) {
@@ -52,8 +52,7 @@ class TeacherDashboardViewModel(
                 _state.update { currentState ->
                     when (res) {
                         is Resource.Success -> {
-                            val teacherData =
-                                res.data ?: Teacher(teacherId = uid, userId = uid)
+                            val teacherData = res.data ?: Teacher(teacherId = uid, userId = uid)
                             currentState.copy(
                                 isLoading = false,
                                 teacher = teacherData,
@@ -153,7 +152,8 @@ class TeacherMaterialsViewModel(
     val state: StateFlow<TeacherMaterialsUiState> = _state.asStateFlow()
 
     init {
-        authRepository.currentUserId?.let { uid ->
+        val uid = authRepository.currentUserId
+        if (!uid.isNullOrBlank()) {
             materialRepository.observeTeacherMaterials(uid).onEach { res ->
                 _state.update { currentState ->
                     when (res) {
@@ -170,7 +170,7 @@ class TeacherMaterialsViewModel(
                     }
                 }
             }.launchIn(viewModelScope)
-        } ?: run {
+        } else {
             _state.update {
                 it.copy(isLoading = false, errorMessage = "User session expired.")
             }
@@ -200,29 +200,33 @@ class TeacherEarningsViewModel(
 
     init {
         val uid = authRepository.currentUserId
-        if (uid != null) {
+        if (!uid.isNullOrBlank()) {
             combine(
                 teacherRepository.observeTeacher(uid),
                 payoutRepository.observePayouts(uid)
             ) { teacherRes, payoutRes ->
-                val teacher = (teacherRes as? Resource.Success)?.data
-                    ?: Teacher(teacherId = uid, userId = uid)
-                val payouts = (payoutRes as? Resource.Success)?.data ?: emptyList()
-                val isLoading =
-                    teacherRes is Resource.Loading || payoutRes is Resource.Loading
+                val teacherData = when (teacherRes) {
+                    is Resource.Success -> teacherRes.data ?: Teacher(teacherId = uid, userId = uid)
+                    else -> Teacher(teacherId = uid, userId = uid)
+                }
+
+                val payoutsData = when (payoutRes) {
+                    is Resource.Success -> payoutRes.data ?: emptyList()
+                    else -> emptyList()
+                }
+
+                val isLoading = teacherRes is Resource.Loading || payoutRes is Resource.Loading
                 val error = (teacherRes as? Resource.Error)?.message
                     ?: (payoutRes as? Resource.Error)?.message
 
-                TeacherEarningsUiState(
+                _state.value.copy(
                     isLoading = isLoading,
-                    teacher = teacher,
-                    payouts = payouts,
-                    errorMessage = error,
-                    isSavingPayment = _state.value.isSavingPayment,
-                    saveSuccessMessage = _state.value.saveSuccessMessage
+                    teacher = teacherData,
+                    payouts = payoutsData,
+                    errorMessage = error
                 )
-            }.onEach { updated ->
-                _state.value = updated
+            }.onEach { updatedState ->
+                _state.value = updatedState
             }.launchIn(viewModelScope)
         } else {
             _state.update {
