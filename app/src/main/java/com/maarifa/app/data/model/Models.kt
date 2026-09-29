@@ -1,7 +1,6 @@
 package com.maarifa.app.data.model
 
 import com.google.firebase.firestore.DocumentId
-import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.ServerTimestamp
 import java.util.Date
 
@@ -30,11 +29,7 @@ data class User(
 data class Teacher(
     @DocumentId var teacherId: String = "", // same value as userId
     var userId: String = "",
-
-    @get:PropertyName("verificationStatus")
-    @set:PropertyName("verificationStatus")
     var verificationStatus: String = TeacherVerificationStatus.PENDING.name,
-
     var verificationNotes: String = "",
     var totalUploads: Int = 0,
     var totalReaders: Int = 0,
@@ -49,27 +44,10 @@ data class Teacher(
     @ServerTimestamp var createdAt: Date? = null
 ) {
     /**
-     * Helper property inayosoma 'status' pale Firestore inapokuwa na field ya 'status'
-     * badala ya 'verificationStatus' bila kuingiliana na Kotlin compiler.
-     */
-    @get:PropertyName("status")
-    @set:PropertyName("status")
-    var status: String
-        get() = verificationStatus
-        set(value) {
-            if (value.isNotBlank()) {
-                verificationStatus = value
-            }
-        }
-
-    /**
-     * Single source of truth checking whether the teacher is verified/approved.
+     * Strict single source of truth check for APPROVED status only.
      */
     val isApproved: Boolean
-        get() {
-            val statusClean = verificationStatus.uppercase().trim()
-            return statusClean == "APPROVED" || statusClean == "VERIFIED"
-        }
+        get() = verificationStatus.uppercase().trim() == "APPROVED"
 }
 
 data class Material(
