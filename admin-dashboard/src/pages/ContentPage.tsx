@@ -108,7 +108,6 @@ export function ContentPage() {
               </thead>
               <tbody className="divide-y divide-gray-50 text-sm text-gray-700">
                 {visible.map((m) => {
-                  // Fallback salama ya kuchukua document ID kama materialId haipo
                   const targetId = m.materialId || (m as any).id;
 
                   return (
