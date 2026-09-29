@@ -127,6 +127,7 @@ export function TeachersPage() {
                   const targetId = t.id;
                   const currentStatus = String(t.verificationStatus || "PENDING").toUpperCase();
                   const isPending = currentStatus === "PENDING";
+                  const isApproved = currentStatus === "APPROVED";
 
                   return (
                     <Fragment key={targetId}>
@@ -170,13 +171,13 @@ export function TeachersPage() {
                             </div>
                           ) : (
                             <div className="flex items-center justify-end gap-2">
-                              {/* MAREKEBISHO HAPA: Tumetumia VERIFIED badala ya APPROVED */}
+                              {/* Standardized display checking strictly for APPROVED */}
                               <span className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${
-                                currentStatus === 'VERIFIED' 
+                                isApproved 
                                   ? 'text-emerald-600 bg-emerald-50 border-emerald-200' 
                                   : 'text-rose-600 bg-rose-50 border-rose-200'
                               }`}>
-                                {currentStatus === 'VERIFIED' ? '✓ VERIFIED' : '✕ REJECTED'}
+                                {isApproved ? '✓ APPROVED' : '✕ REJECTED'}
                               </span>
                               <button
                                 className="px-2 py-1 bg-gray-100 hover:bg-rose-100 hover:text-rose-700 text-gray-600 rounded-lg font-medium text-xs transition"
