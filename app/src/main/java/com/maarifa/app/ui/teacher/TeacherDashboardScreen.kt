@@ -69,8 +69,7 @@ fun TeacherDashboardScreen() {
         LoadingState()
     } else {
         val teacher = state.teacher
-        // Inakagua idhini kwa kutumia logic yetu mpya ya data model
-        val isVerified = teacher?.isApproved == true
+        val isApproved = teacher?.isApproved == true
         val rawStatus = teacher?.verificationStatus?.uppercase()?.trim() ?: "PENDING"
 
         Box(
@@ -84,7 +83,6 @@ fun TeacherDashboardScreen() {
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp, vertical = 20.dp)
             ) {
-                // Hujambo/Welcome Header
                 Text(
                     text = "Welcome back${
                         state.user?.fullName?.let { ", ${it.split(" ").first()}" } ?: ""
@@ -94,8 +92,7 @@ fun TeacherDashboardScreen() {
                     color = Color(0xFF1B5E20)
                 )
 
-                if (isVerified) {
-                    // ---------------- DASHBOARD KUU YA WALIMU WALIOTHIBITISHWA ----------------
+                if (isApproved) {
                     Text(
                         text = "Here's how your materials are performing.",
                         fontSize = 14.sp,
@@ -103,7 +100,6 @@ fun TeacherDashboardScreen() {
                         modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
                     )
 
-                    // Mstari wa 1 wa Takwimu: Uploads & Readers
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -124,7 +120,6 @@ fun TeacherDashboardScreen() {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Mstari wa 2 wa Takwimu: Engagement & Balance
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -145,7 +140,6 @@ fun TeacherDashboardScreen() {
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Kadi ya Maelezo / Notice Banner
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
@@ -185,12 +179,10 @@ fun TeacherDashboardScreen() {
                         }
                     }
                 } else {
-                    // ---------------- KADI YA WALIMU AMBAO BADO HAWANA VERIFICATION ----------------
                     Spacer(modifier = Modifier.height(24.dp))
                     VerificationPendingCard(status = rawStatus)
                 }
 
-                // Onyesha Error Ikitokea
                 state.errorMessage?.let { err ->
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
