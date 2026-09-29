@@ -22,7 +22,7 @@ export const adminApi = {
       return result.data as ApiResponse;
     } catch (error: any) {
       console.error("Error approving teacher:", error);
-      throw new Error(error.message || "Imefeli kuthibitisha mwalimu.");
+      throw new Error(error.details || error.message || "Imefeli kuthibitisha mwalimu.");
     }
   },
 
@@ -32,7 +32,7 @@ export const adminApi = {
       return result.data as ApiResponse;
     } catch (error: any) {
       console.error("Error rejecting teacher:", error);
-      throw new Error(error.message || "Imefeli kukataa maombi ya mwalimu.");
+      throw new Error(error.details || error.message || "Imefeli kukataa maombi ya mwalimu.");
     }
   },
 
@@ -43,7 +43,7 @@ export const adminApi = {
       return result.data as ApiResponse;
     } catch (error: any) {
       console.error("Error approving material:", error);
-      throw new Error(error.message || "Imefeli kuthibitisha maudhui.");
+      throw new Error(error.details || error.message || "Imefeli kuthibitisha maudhui.");
     }
   },
 
@@ -53,7 +53,7 @@ export const adminApi = {
       return result.data as ApiResponse;
     } catch (error: any) {
       console.error("Error rejecting material:", error);
-      throw new Error(error.message || "Imefeli kukataa maudhui.");
+      throw new Error(error.details || error.message || "Imefeli kukataa maudhui.");
     }
   },
 
@@ -64,7 +64,7 @@ export const adminApi = {
       return result.data as ApiResponse;
     } catch (error: any) {
       console.error("Error approving payout:", error);
-      throw new Error(error.message || "Imefeli kuthibitisha malipo.");
+      throw new Error(error.details || error.message || "Imefeli kuthibitisha malipo.");
     }
   },
 
@@ -74,7 +74,7 @@ export const adminApi = {
       return result.data as ApiResponse;
     } catch (error: any) {
       console.error("Error marking payout paid:", error);
-      throw new Error(error.message || "Imefeli kuweka kumbukumbu ya malipo.");
+      throw new Error(error.details || error.message || "Imefeli kuweka kumbukumbu ya malipo.");
     }
   },
 
@@ -84,7 +84,7 @@ export const adminApi = {
       return result.data as ApiResponse;
     } catch (error: any) {
       console.error("Error flagging payout exception:", error);
-      throw new Error(error.message || "Imefeli kuweka flag kwenye malipo.");
+      throw new Error(error.details || error.message || "Imefeli kuweka flag kwenye malipo.");
     }
   },
 };
