@@ -58,10 +58,13 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
         }
     )
     val state by vm.state.collectAsState()
-    val status = state.teacher?.verificationStatus?.uppercase() ?: "PENDING"
+    val rawStatus = state.teacher?.verificationStatus?.uppercase() ?: "PENDING"
+    
+    // Normalization: Inapokea zote "APPROVED" na "VERIFIED"
+    val isApproved = rawStatus == "APPROVED" || rawStatus == "VERIFIED"
 
-    LaunchedEffect(status) {
-        if (status == "VERIFIED") {
+    LaunchedEffect(isApproved) {
+        if (isApproved) {
             onVerified()
         }
     }
@@ -87,16 +90,16 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
                 )
             }
         } else {
-            val uiInfo = when (status) {
-                "REJECTED" -> StatusUiInfo(
+            val uiInfo = when {
+                rawStatus == "REJECTED" -> StatusUiInfo(
                     icon = Icons.Default.Cancel,
                     iconTint = Color(0xFFC62828),
                     iconBg = Color(0xFFFFEBEE),
                     title = "Application not approved",
                     body = state.teacher?.verificationNotes?.takeIf { it.isNotBlank() }
-                        ?: "Your teacher application wasn't approved. Contact support for details."
+                        ?: "Your teacher application wasn't approved. You can still access your workspace or contact support."
                 )
-                "VERIFIED" -> StatusUiInfo(
+                isApproved -> StatusUiInfo(
                     icon = Icons.Default.CheckCircle,
                     iconTint = Color(0xFF1E7F55),
                     iconBg = Color(0xFFE8F5E9),
@@ -108,7 +111,7 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
                     iconTint = Color(0xFF1E7F55),
                     iconBg = Color(0xFFE8F5E9),
                     title = "Verification in progress",
-                    body = "Our team is reviewing your teacher application. You'll be notified as soon as you're approved — this usually doesn't take long."
+                    body = "Our team is reviewing your teacher application. Meanwhile, you can proceed to your dashboard to prepare and manage your workspace."
                 )
             }
 
@@ -163,14 +166,13 @@ fun TeacherVerificationPendingScreen(onVerified: () -> Unit) {
                         lineHeight = 20.sp
                     )
 
-                    if (status == "VERIFIED") {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        GradientButton(
-                            text = "Continue to dashboard",
-                            onClick = onVerified,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+                    // Kitufe kinatokea mara moja ili mwalimu asiwe locked kwe pending screen
+                    Spacer(modifier = Modifier.height(24.dp))
+                    GradientButton(
+                        text = if (isApproved) "Continue to dashboard" else "Proceed to Dashboard",
+                        onClick = onVerified,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
