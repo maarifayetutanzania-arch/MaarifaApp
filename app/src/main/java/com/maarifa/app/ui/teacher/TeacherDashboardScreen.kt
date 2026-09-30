@@ -69,8 +69,10 @@ fun TeacherDashboardScreen() {
         LoadingState()
     } else {
         val teacher = state.teacher
-        val isApproved = teacher?.isApproved == true
         val rawStatus = teacher?.verificationStatus?.uppercase()?.trim() ?: "PENDING"
+        
+        // MAREKEBISHO HAPA: Inachukua true ikiwa isApproved ni true AU status ni APPROVED / VERIFIED
+        val isApproved = teacher?.isApproved == true || rawStatus == "APPROVED" || rawStatus == "VERIFIED"
 
         Box(
             modifier = Modifier
