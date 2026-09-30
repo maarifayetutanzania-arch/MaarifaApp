@@ -43,23 +43,39 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ---------------- teachers (Legacy / Existing Collection Support) ----------------
+    // ---------------- teachers ----------------
+    // Mwalimu yeyote anaweza kutengeneza au kurekebisha profile yake
     match /teachers/{teacherId} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow create, update: if isSignedIn() && (request.auth.uid == teacherId || isAdmin());
+      allow delete: if isAdmin();
     }
 
     // ---------------- materials ----------------
+    // Imerekebishwa: Mwalimu anaweza kupakia (create) na kubadilisha material yake bila kuzuiwa na status
     match /materials/{materialId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() 
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.status == 'PENDING_REVIEW';
-      allow update: if isAdmin() || (
-        isSignedIn() && resource.data.userId == request.auth.uid &&
-        request.resource.data.status == resource.data.status
+      
+      // Anaruhusiwa kupakia kama ame-sign in na yeye ndiye aliyeiweka (authorId au userId)
+      allow create: if isSignedIn() && (
+        request.resource.data.userId == request.auth.uid || 
+        request.resource.data.authorId == request.auth.uid
       );
-      allow delete: if isAdmin();
+      
+      // Anaruhusiwa kuedit kama ni ya kwake au kama ni Admin
+      allow update: if isAdmin() || (
+        isSignedIn() && (
+          resource.data.userId == request.auth.uid || 
+          resource.data.authorId == request.auth.uid
+        )
+      );
+      
+      allow delete: if isAdmin() || (
+        isSignedIn() && (
+          resource.data.userId == request.auth.uid || 
+          resource.data.authorId == request.auth.uid
+        )
+      );
     }
 
     // ---------------- subscriptions ----------------
