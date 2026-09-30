@@ -71,7 +71,8 @@ fun NavGraph(
                     state.profile == null -> Screen.Register.route
                     state.profile?.role == "TEACHER" ||
                         state.profile?.roleEnum == UserRole.TEACHER -> {
-                        Screen.TeacherPending.route
+                        // Inamwelekeza moja kwa moja TeacherHome
+                        Screen.TeacherHome.route
                     }
                     else -> Screen.StudentHome.route
                 }
@@ -117,7 +118,7 @@ fun NavGraph(
                 },
                 onRegisterSuccess = { role ->
                     val target = if (role == UserRole.TEACHER) {
-                        Screen.TeacherPending.route
+                        Screen.TeacherHome.route
                     } else {
                         Screen.StudentHome.route
                     }
@@ -148,7 +149,7 @@ fun NavGraph(
                         state.profile?.role == "TEACHER" ||
                         state.profile?.roleEnum == UserRole.TEACHER
                     ) {
-                        Screen.TeacherPending.route
+                        Screen.TeacherHome.route
                     } else {
                         Screen.StudentHome.route
                     }
