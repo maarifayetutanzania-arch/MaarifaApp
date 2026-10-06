@@ -18,11 +18,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ChevronRight
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -59,62 +60,129 @@ fun TeacherDashboardScreen() {
     )
     val state by vm.state.collectAsState()
 
-    val primaryGreen = Color(0xFF1E7F55)
-    val lightGreenBg = Color(0xFFE8F5E9)
-    val backgroundGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFFE8F5E9), Color(0xFFC8E6C9), Color(0xFFA5D6A7))
-    )
+    val screenBg = Color(0xFFFAFAFA)
 
     if (state.isLoading) {
         LoadingState()
     } else {
         val teacher = state.teacher
         val rawStatus = teacher?.verificationStatus?.uppercase()?.trim() ?: "PENDING"
-        
-        // MAREKEBISHO HAPA: Inachukua true ikiwa isApproved ni true AU status ni APPROVED / VERIFIED
         val isApproved = teacher?.isApproved == true || rawStatus == "APPROVED" || rawStatus == "VERIFIED"
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(backgroundGradient)
+                .background(screenBg)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
-                Text(
-                    text = "Welcome back${
-                        state.user?.fullName?.let { ", ${it.split(" ").first()}" } ?: ""
-                    }",
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1B5E20)
-                )
-
                 if (isApproved) {
-                    Text(
-                        text = "Here's how your materials are performing.",
-                        fontSize = 14.sp,
-                        color = Color.DarkGray.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
-                    )
+                    // --- HERO BANNER (UI #2 Style) ---
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(
+                                            Color(0xFFE8F5E9),
+                                            Color(0xFFF1F8E9),
+                                            Color(0xFFE0F2F1)
+                                        )
+                                    )
+                                )
+                                .padding(20.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Welcome back,",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF1B5E20)
+                                    )
+                                    Text(
+                                        text = state.user?.fullName?.let { it.split(" ").first() } ?: "Teacher",
+                                        fontSize = 32.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFF111827)
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = "Here's how your materials are performing.",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF4B5563)
+                                    )
+                                }
 
+                                Column(
+                                    horizontalAlignment = Alignment.End,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "Better",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF2E7D32)
+                                    )
+                                    Text(
+                                        text = "Lessons",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF2E7D32)
+                                    )
+                                    Text(
+                                        text = "Brighter",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF2E7D32)
+                                    )
+                                    Text(
+                                        text = "Futures",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF2E7D32)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // --- METRIC CARDS ROW 1 ---
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         StatCard(
                             icon = Icons.Default.UploadFile,
+                            iconBgColor = Color(0xFFE8F5E9),
+                            iconColor = Color(0xFF2E7D32),
                             label = "Uploads",
+                            subtitle = "Materials you've shared",
                             value = "${teacher?.totalUploads ?: 0}",
                             modifier = Modifier.weight(1f)
                         )
                         StatCard(
                             icon = Icons.Default.Groups,
+                            iconBgColor = Color(0xFFE3F2FD),
+                            iconColor = Color(0xFF1565C0),
                             label = "Readers",
+                            subtitle = "Students who have accessed your materials",
                             value = "${teacher?.totalReaders ?: 0}",
                             modifier = Modifier.weight(1f)
                         )
@@ -122,60 +190,68 @@ fun TeacherDashboardScreen() {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    // --- METRIC CARDS ROW 2 ---
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         StatCard(
-                            icon = Icons.Default.TrendingUp,
+                            icon = Icons.Default.ShowChart,
+                            iconBgColor = Color(0xFFF3E5F5),
+                            iconColor = Color(0xFF7B1FA2),
                             label = "Engagement score",
+                            subtitle = "Based on student activity",
                             value = "%.1f".format(teacher?.engagementScore ?: 0.0),
                             modifier = Modifier.weight(1f)
                         )
                         StatCard(
-                            icon = Icons.Default.Payments,
+                            icon = Icons.Default.AccountBalanceWallet,
+                            iconBgColor = Color(0xFFFFF8E1),
+                            iconColor = Color(0xFFF57F17),
                             label = "Balance",
+                            subtitle = "Your earnings",
                             value = "${teacher?.earningsBalanceTzs ?: 0} TZS",
                             modifier = Modifier.weight(1f)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
+                    // --- INFORMATION NOTICE CARD (UI #2 Style) ---
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-                        border = BorderStroke(1.dp, Color(0xFFC8E6C9))
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9)),
+                        border = BorderStroke(1.dp, Color(0xFFDCEDC8)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            verticalAlignment = Alignment.Top
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(38.dp)
+                                    .size(42.dp)
                                     .clip(CircleShape)
-                                    .background(lightGreenBg),
+                                    .background(Color(0xFF2E7D32)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Info,
                                     contentDescription = null,
-                                    tint = primaryGreen,
-                                    modifier = Modifier.size(20.dp)
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(14.dp))
                             Text(
                                 text = "Engagement score and earnings are computed automatically from verified student activity across all your materials — no manual calculation, ever.",
-                                fontSize = 13.sp,
-                                color = Color(0xFF2E7D32),
+                                fontSize = 12.sp,
+                                color = Color(0xFF1B5E20),
                                 fontWeight = FontWeight.Medium,
-                                lineHeight = 18.sp,
+                                lineHeight = 17.sp,
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -207,8 +283,8 @@ private fun VerificationPendingCard(status: String) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        border = BorderStroke(1.dp, Color(0xFFC8E6C9))
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
     ) {
         Column(
             modifier = Modifier
@@ -259,50 +335,79 @@ private fun VerificationPendingCard(status: String) {
 @Composable
 private fun StatCard(
     icon: ImageVector,
+    iconBgColor: Color,
+    iconColor: Color,
     label: String,
+    subtitle: String,
     value: String,
     modifier: Modifier = Modifier
 ) {
-    val primaryGreen = Color(0xFF1E7F55)
-    val lightGreenBg = Color(0xFFE8F5E9)
-
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0))
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(lightGreenBg),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(iconBgColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconColor,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
                 Icon(
-                    imageVector = icon,
+                    imageVector = Icons.AutoMirrored.Filled.ChevronRight,
                     contentDescription = null,
-                    tint = primaryGreen,
+                    tint = Color(0xFF9E9E9E),
                     modifier = Modifier.size(20.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(4.dp))
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(
                 text = value,
-                fontSize = 20.sp,
+                fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.DarkGray
+                color = Color(0xFF111827)
             )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
             Text(
                 text = label,
-                fontSize = 12.sp,
-                color = Color.Gray,
-                fontWeight = FontWeight.Medium
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF374151)
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Text(
+                text = subtitle,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Normal,
+                color = Color(0xFF6B7280),
+                lineHeight = 14.sp
             )
         }
     }
