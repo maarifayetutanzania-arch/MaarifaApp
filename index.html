@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Maarifa connects Tanzanian secondary school students with qualified teachers and trusted learning materials beyond the classroom."
+    />
+    <meta name="theme-color" content="#f8fafc" />
+    <title>Maarifa — Better Lessons. Brighter Futures.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              forest: "#0F5A47",
+              leaf: "#15803D",
+              mint: "#DCFCE7",
+              ink: "#0F172A",
+              paper: "#F8FAFC",
+            },
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', "sans-serif"],
+            },
+            boxShadow: {
+              soft: "0 24px 70px -34px rgba(15, 23, 42, 0.24)",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 6rem;
+      }
+
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
+
+      .hero-glow {
+        background:
+          radial-gradient(ellipse at 15% 20%, rgba(220, 252, 231, 0.9), transparent 42%),
+          radial-gradient(ellipse at 88% 3%, rgba(209, 250, 229, 0.75), transparent 34%);
+      }
+
+      .grid-pattern {
+        background-image: radial-gradient(rgba(15, 90, 71, 0.14) 1px, transparent 1px);
+        background-size: 18px 18px;
+      }
+
+      .modal-backdrop[aria-hidden="false"] {
+        display: flex;
+      }
+
+      .upload-backdrop[aria-hidden="false"] {
+        display: flex;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="overflow-x-hidden bg-paper text-ink antialiased">
+    <header class="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur-md">
+      <nav
+        aria-label="Main navigation"
+        class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8 lg:px-10"
+      >
+        <a href="#" class="flex shrink-0 items-center gap-2.5" aria-label="Maarifa home">
+          <span class="grid h-10 w-10 place-items-center rounded-2xl bg-forest text-white shadow-md shadow-forest/15">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6" fill="none">
+              <path d="m2.5 9.2 9.5-5 9.5 5-9.5 5-9.5-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+              <path d="M6.5 11.4v4.1c3.4 2.6 7.6 2.6 11 0v-4.1M21.5 9.2v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <span class="text-xl font-extrabold tracking-tight text-forest">maarifa</span>
+        </a>
+
+        <div class="hidden items-center gap-8 text-sm font-semibold text-slate-600 md:flex">
+          <a class="transition hover:text-forest" href="#about">About</a>
+          <a class="transition hover:text-forest" href="#students">For Students</a>
+          <a class="transition hover:text-forest" href="#teachers">For Teachers</a>
+          <a class="transition hover:text-forest" href="#features">Features</a>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3">
+          <a
+            href="#contact"
+            class="hidden rounded-full px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:inline-flex"
+          >Sign In</a>
+          <a
+            href="#register"
+            class="inline-flex items-center gap-2 rounded-full bg-forest px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-forest/15 transition hover:-translate-y-0.5 hover:bg-leaf sm:px-5"
+          >
+            Get started
+            <svg aria-hidden="true" viewBox="0 0 20 20" class="h-4 w-4" fill="none">
+              <path d="M4.2 10h11.6m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero-glow relative overflow-hidden">
+        <div class="mx-auto grid max-w-7xl items-center gap-14 px-5 pb-20 pt-14 sm:px-8 sm:pb-24 sm:pt-20 lg:grid-cols-[1.02fr_.98fr] lg:gap-10 lg:px-10 lg:pb-28 lg:pt-24">
+          <div class="relative z-10 max-w-2xl">
+            <div class="mb-7 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3.5 py-2 text-xs font-bold tracking-wide text-forest shadow-sm sm:text-sm">
+              <span class="h-2 w-2 rounded-full bg-leaf"></span>
+              A brighter way to learn in Tanzania
+            </div>
+            <h1 class="text-5xl font-extrabold leading-[1.08] tracking-[-0.055em] text-ink sm:text-6xl lg:text-[4.4rem]">
+              Better lessons.<br />
+              <span class="text-forest">Brighter futures.</span>
+            </h1>
+            <p class="mt-6 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
+              Maarifa is Tanzania’s digital learning bridge—connecting secondary school students with qualified teachers and trusted study materials, even after the school day ends.
+            </p>
+            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a
+                href="#students"
+                class="inline-flex min-h-13 items-center justify-center gap-2 rounded-full bg-forest px-6 py-4 text-sm font-bold text-white shadow-xl shadow-forest/20 transition hover:-translate-y-0.5 hover:bg-leaf"
+              >
+                Join as a student
+                <svg aria-hidden="true" viewBox="0 0 20 20" class="h-4 w-4" fill="none">
+                  <path d="M4.2 10h11.6m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </a>
+              <a
+                href="#upload-modal"
+                data-open-upload
+                class="inline-flex min-h-13 items-center justify-center rounded-full border border-slate-200 bg-white/80 px-6 py-4 text-sm font-bold text-ink transition hover:border-emerald-300 hover:bg-white"
+              >Teach on Maarifa</a>
+            </div>
+            <div class="mt-9 flex items-center gap-3 text-sm text-slate-500">
+              <div class="flex -space-x-2">
+                <span class="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-emerald-100 text-xs font-bold text-forest">F1</span>
+                <span class="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-amber-100 text-xs font-bold text-amber-800">F3</span>
+                <span class="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-sky-100 text-xs font-bold text-sky-800">F6</span>
+              </div>
+              <span>Made for every step from <strong class="font-bold text-slate-700">Form 1 to Form 6</strong></span>
+            </div>
+          </div>
+
+          <div class="relative mx-auto w-full max-w-xl lg:ml-auto">
+            <div aria-hidden="true" class="grid-pattern absolute -right-3 top-8 h-32 w-32 rounded-3xl opacity-70 sm:-right-7 sm:h-40 sm:w-40"></div>
+            <div class="relative overflow-hidden rounded-[2rem] border border-white/80 bg-white p-2.5 shadow-soft sm:p-3">
+              <div class="relative h-[350px] overflow-hidden rounded-[1.5rem] bg-emerald-100 sm:h-[440px]">
+                <img
+                  src="https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1200&q=85"
+                  alt="Students learning together in a bright classroom"
+                  class="h-full w-full object-cover object-center"
+                  fetchpriority="high"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-ink/5"></div>
+                <div class="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/90 px-3 py-2 text-xs font-bold text-forest shadow-lg backdrop-blur sm:left-6 sm:top-6">
+                  <span class="grid h-6 w-6 place-items-center rounded-full bg-mint">
+                    <svg aria-hidden="true" viewBox="0 0 20 20" class="h-3.5 w-3.5" fill="none">
+                      <path d="m4 10.2 3.7 3.7L16 5.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  Learning, without limits
+                </div>
+                <div class="absolute bottom-5 left-5 right-5 text-white sm:bottom-7 sm:left-7">
+                  <p class="text-xs font-bold uppercase tracking-[0.2em] text-white/75">Your next chapter starts here</p>
+                  <p class="mt-2 max-w-sm text-2xl font-bold leading-snug tracking-tight sm:text-3xl">A little more support can change everything.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="relative mx-4 -mt-12 rounded-3xl border border-slate-100 bg-white p-4 shadow-soft sm:absolute sm:-bottom-8 sm:-left-12 sm:mx-0 sm:mt-0 sm:w-[310px] sm:p-5">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-bold text-ink">Your learning space</p>
+                  <p class="mt-1 text-xs font-medium text-slate-500">A preview of your dashboard</p>
+                </div>
+                <span class="grid h-10 w-10 place-items-center rounded-2xl bg-mint text-forest">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+                    <path d="M4 19V5m0 14h16M8 15l3-4 3 2 5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+              </div>
+              <div class="mt-4 grid grid-cols-3 gap-2">
+                <div class="rounded-2xl bg-slate-50 p-3">
+                  <p class="text-[10px] font-semibold leading-4 text-slate-500">Balance</p>
+                  <p class="mt-1 text-sm font-extrabold text-ink">0 <span class="text-[10px]">TZS</span></p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-3">
+                  <p class="text-[10px] font-semibold leading-4 text-slate-500">Engagement</p>
+                  <p class="mt-1 text-sm font-extrabold text-ink">Tracked</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-3">
+                  <p class="text-[10px] font-semibold leading-4 text-slate-500">Materials</p>
+                  <p class="mt-1 text-sm font-extrabold text-ink">Publish</p>
+                </div>
+              </div>
+              <div class="mt-4 flex items-center gap-2 text-xs font-semibold text-forest">
+                <span class="h-2 w-2 rounded-full bg-leaf"></span>
+                Built around your learning journey
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="about" class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-10">
+        <div class="grid gap-8 lg:grid-cols-[.78fr_1.22fr] lg:gap-20">
+          <div>
+            <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-leaf">The idea behind Maarifa</p>
+            <h2 class="mt-4 max-w-md text-3xl font-extrabold leading-tight tracking-[-0.04em] text-ink sm:text-4xl">
+              What if great learning never had to stop at the classroom door?
+            </h2>
+          </div>
+          <div class="max-w-2xl lg:pt-7">
+            <p class="text-lg leading-8 text-slate-600">
+              Maarifa gives Form 1 through Form 6 students a simpler way to build consistent study routines, find reliable learning materials, and get support from qualified teachers outside class hours.
+            </p>
+            <p class="mt-5 text-base leading-8 text-slate-600">
+              For educators, it’s a place to publish useful study materials, understand how students engage with them, and earn monthly revenue based on verified engagement. One thoughtful lesson can reach learners wherever they are.
+            </p>
+            <a href="#features" class="mt-7 inline-flex items-center gap-2 text-sm font-bold text-forest transition hover:gap-3">
+              Discover what you can do
+              <svg aria-hidden="true" viewBox="0 0 20 20" class="h-4 w-4" fill="none">
+                <path d="M4.2 10h11.6m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-white py-20 sm:py-24">
+        <div class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <div class="mx-auto max-w-2xl text-center">
+            <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-leaf">Made for both sides of learning</p>
+            <h2 class="mt-4 text-3xl font-extrabold tracking-[-0.04em] text-ink sm:text-4xl">Better together, by design.</h2>
+            <p class="mt-4 text-base leading-7 text-slate-600">A thoughtful toolkit for the people who learn—and the people who make learning possible.</p>
+          </div>
+
+          <div class="mt-12 grid gap-5 lg:grid-cols-2">
+            <article id="students" class="group relative overflow-hidden rounded-3xl border border-emerald-100 bg-[#F2FBF5] p-7 sm:p-9">
+              <div aria-hidden="true" class="absolute -right-14 -top-16 h-48 w-48 rounded-full bg-emerald-100/70 blur-2xl transition group-hover:scale-125"></div>
+              <div class="relative">
+                <span class="grid h-12 w-12 place-items-center rounded-2xl bg-white text-forest shadow-sm">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6" fill="none">
+                    <path d="m3 9 9-5 9 5-9 5-9-5Zm3.5 2.2v4c3.3 2.5 7.7 2.5 11 0v-4M21 9v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+                <p class="mt-7 text-xs font-extrabold uppercase tracking-[0.18em] text-leaf">For students</p>
+                <h3 class="mt-2 text-2xl font-extrabold tracking-tight text-ink">Study with confidence.</h3>
+                <p class="mt-3 max-w-md leading-7 text-slate-600">Find clear explanations and a structure that makes your next study session easier to start.</p>
+                <ul class="mt-7 grid gap-4 sm:grid-cols-2">
+                  <li class="flex items-start gap-3 text-sm font-semibold text-slate-700">
+                    <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-200/70 text-forest">
+                      <svg aria-hidden="true" viewBox="0 0 16 16" class="h-3 w-3" fill="none"><path d="m3 8 3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                    Verified notes and past-paper solutions
+                  </li>
+                  <li class="flex items-start gap-3 text-sm font-semibold text-slate-700">
+                    <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-200/70 text-forest">
+                      <svg aria-hidden="true" viewBox="0 0 16 16" class="h-3 w-3" fill="none"><path d="m3 8 3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                    Offline reading for learning on the go
+                  </li>
+                  <li class="flex items-start gap-3 text-sm font-semibold text-slate-700">
+                    <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-200/70 text-forest">
+                      <svg aria-hidden="true" viewBox="0 0 16 16" class="h-3 w-3" fill="none"><path d="m3 8 3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                    Structured Form 1–6 study paths
+                  </li>
+                  <li class="flex items-start gap-3 text-sm font-semibold text-slate-700">
+                    <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-200/70 text-forest">
+                      <svg aria-hidden="true" viewBox="0 0 16 16" class="h-3 w-3" fill="none"><path d="m3 8 3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                    Learning beyond school hours
+                  </li>
+                </ul>
+                <a href="#register" class="mt-8 inline-flex items-center gap-2 rounded-full bg-forest px-5 py-3 text-sm font-bold text-white transition hover:bg-leaf">Start learning <span aria-hidden="true">→</span></a>
+              </div>
+            </article>
+
+            <article id="teachers" class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-7 sm:p-9">
+              <div aria-hidden="true" class="absolute -right-14 -top-16 h-48 w-48 rounded-full bg-sky-100/70 blur-2xl transition group-hover:scale-125"></div>
+              <div class="relative">
+                <span class="grid h-12 w-12 place-items-center rounded-2xl bg-white text-forest shadow-sm">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6" fill="none">
+                    <path d="M4 19.5h16M6 16V8m6 8V4m6 12v-5M4 8l5-4 4 3 6-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+                <p class="mt-7 text-xs font-extrabold uppercase tracking-[0.18em] text-leaf">For teachers</p>
+                <h3 class="mt-2 text-2xl font-extrabold tracking-tight text-ink">Your knowledge goes further.</h3>
+                <p class="mt-3 max-w-md leading-7 text-slate-600">Share your expertise with more students and see how your teaching materials are making a difference.</p>
+                <ul class="mt-7 grid gap-4 sm:grid-cols-2">
+                  <li class="flex items-start gap-3 text-sm font-semibold text-slate-700">
+                    <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-200/70 text-forest">
+                      <svg aria-hidden="true" viewBox="0 0 16 16" class="h-3 w-3" fill="none"><path d="m3 8 3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                    Automated monthly revenue distribution
+                  </li>
+                  <li class="flex items-start gap-3 text-sm font-semibold text-slate-700">
+                    <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-200/70 text-forest">
+                      <svg aria-hidden="true" viewBox="0 0 16 16" class="h-3 w-3" fill="none"><path d="m3 8 3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                    Student engagement tracking
+                  </li>
+                  <li class="flex items-start gap-3 text-sm font-semibold text-slate-700">
+                    <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-200/70 text-forest">
+                      <svg aria-hidden="true" viewBox="0 0 16 16" class="h-3 w-3" fill="none"><path d="m3 8 3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                    Instant material publishing
+                  </li>
+                  <li class="flex items-start gap-3 text-sm font-semibold text-slate-700">
+                    <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-200/70 text-forest">
+                      <svg aria-hidden="true" viewBox="0 0 16 16" class="h-3 w-3" fill="none"><path d="m3 8 3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                    Transparent dashboard analytics
+                  </li>
+                </ul>
+                <a href="#upload-modal" data-open-upload class="mt-8 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-ink transition hover:border-forest hover:text-forest">Become an educator <span aria-hidden="true">→</span></a>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-10">
+        <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <div>
+            <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-leaf">A smarter study routine</p>
+            <h2 class="mt-4 max-w-2xl text-3xl font-extrabold tracking-[-0.04em] text-ink sm:text-4xl">Everything you need to make progress.</h2>
+          </div>
+          <p class="max-w-sm leading-7 text-slate-600">Simple, useful tools that bring students, teachers, and trusted content together.</p>
+        </div>
+
+        <div class="mt-10 grid gap-4 md:grid-cols-6">
+          <article class="relative min-h-[290px] overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm md:col-span-3 sm:p-8">
+            <div class="flex h-full flex-col justify-between">
+              <div>
+                <span class="grid h-11 w-11 place-items-center rounded-2xl bg-mint text-forest">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+                    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Zm0 0V19m4-11h8m-8 4h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </span>
+                <h3 class="mt-6 text-xl font-extrabold text-ink">Smart content hub</h3>
+                <p class="mt-2 max-w-md leading-7 text-slate-600">Find the right material, organized by subject and secondary education level—from Form 1 through Form 6.</p>
+              </div>
+              <div class="mt-8 flex flex-wrap gap-2">
+                <span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">Mathematics</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">Biology</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">Physics</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">And more</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="relative min-h-[290px] overflow-hidden rounded-3xl bg-forest p-7 text-white shadow-lg shadow-forest/10 md:col-span-3 sm:p-8">
+            <div aria-hidden="true" class="absolute -right-12 -top-16 h-56 w-56 rounded-full border-[28px] border-white/5"></div>
+            <div class="relative flex h-full flex-col justify-between">
+              <div>
+                <span class="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 text-emerald-100">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+                    <path d="M12 3v18m5-13.5C17 6.1 14.8 5 12 5S7 6.1 7 8.2c0 5 10 2.6 10 7.6 0 2.2-2.2 3.7-5 3.7s-5-1.4-5-3.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                  </svg>
+                </span>
+                <h3 class="mt-6 text-xl font-extrabold">Automated revenue split</h3>
+                <p class="mt-2 max-w-md leading-7 text-emerald-50/80">Transparent earnings calculations tied to verified student engagement, with monthly revenue distribution for educators.</p>
+              </div>
+              <div class="mt-8 flex items-center gap-3 border-t border-white/15 pt-5 text-sm font-semibold text-emerald-50/90">
+                <span class="grid h-8 w-8 place-items-center rounded-full bg-white/10">✓</span>
+                Clear, engagement-based earnings
+              </div>
+            </div>
+          </article>
+
+          <article class="relative overflow-hidden rounded-3xl border border-slate-200 bg-[#F7FAF8] p-7 md:col-span-6 sm:p-8">
+            <div class="grid items-center gap-8 lg:grid-cols-[1fr_.8fr]">
+              <div>
+                <span class="grid h-11 w-11 place-items-center rounded-2xl bg-white text-forest shadow-sm">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+                    <rect x="3" y="5" width="18" height="14" rx="2.5" stroke="currentColor" stroke-width="1.7" />
+                    <path d="M3 10h18m-13 5h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                  </svg>
+                </span>
+                <h3 class="mt-6 text-xl font-extrabold text-ink">Secure mobile payments</h3>
+                <p class="mt-2 max-w-xl leading-7 text-slate-600">Simple, familiar ways to pay for subscriptions and receive automated payouts, with support for Tanzania’s mobile money ecosystem.</p>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex min-h-16 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-extrabold tracking-tight text-slate-700">AzamPay</div>
+                <div class="flex min-h-16 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-extrabold tracking-tight text-slate-700">M-Pesa</div>
+                <div class="flex min-h-16 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-extrabold tracking-tight text-slate-700">Tigo Pesa</div>
+                <div class="flex min-h-16 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-extrabold tracking-tight text-slate-700">Airtel Money</div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="register" class="px-5 pb-20 sm:px-8 sm:pb-28 lg:px-10">
+        <div class="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-forest px-6 py-12 text-white sm:px-10 sm:py-16 lg:px-16">
+          <div aria-hidden="true" class="absolute -right-20 -top-36 h-96 w-96 rounded-full border-[52px] border-white/[0.04]"></div>
+          <div aria-hidden="true" class="absolute bottom-0 right-1/3 h-52 w-52 rounded-full bg-emerald-400/10 blur-3xl"></div>
+          <div class="relative">
+            <div class="max-w-2xl">
+              <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-emerald-200">Your next step</p>
+              <h2 class="mt-4 text-3xl font-extrabold leading-tight tracking-[-0.04em] sm:text-4xl">A brighter future starts with one small step.</h2>
+              <p class="mt-4 leading-7 text-emerald-50/80">Whether you’re ready to learn or ready to teach, there’s a place for you here.</p>
+            </div>
+            <div class="mt-9 grid gap-4 md:grid-cols-2">
+              <a
+                href="mailto:maarifayetutanzania@gmail.com?subject=Student%20registration"
+                class="group flex items-center justify-between gap-4 rounded-2xl bg-white p-5 text-left text-ink transition hover:-translate-y-1 hover:shadow-xl sm:p-6"
+              >
+                <span>
+                  <span class="block text-xs font-extrabold uppercase tracking-[0.15em] text-leaf">For students</span>
+                  <span class="mt-2 block text-lg font-extrabold">Ready to excel in your studies?</span>
+                  <span class="mt-1 block text-sm font-semibold text-slate-500">Register as a student</span>
+                </span>
+                <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-mint text-forest transition group-hover:bg-forest group-hover:text-white" aria-hidden="true">→</span>
+              </a>
+              <a
+                href="#upload-modal"
+                data-open-upload
+                class="group flex items-center justify-between gap-4 rounded-2xl border border-white/20 bg-white/10 p-5 text-left text-white backdrop-blur transition hover:-translate-y-1 hover:bg-white/15 sm:p-6"
+              >
+                <span>
+                  <span class="block text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-200">For educators</span>
+                  <span class="mt-2 block text-lg font-extrabold">Ready to share your knowledge?</span>
+                  <span class="mt-1 block text-sm font-semibold text-emerald-50/70">Apply as an educator</span>
+                </span>
+                <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/10 text-white transition group-hover:bg-white group-hover:text-forest" aria-hidden="true">→</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer id="contact" class="border-t border-slate-200 bg-white">
+      <div class="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
+        <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.3fr_.7fr_.7fr]">
+          <div>
+            <a href="#" class="inline-flex items-center gap-2.5" aria-label="Maarifa home">
+              <span class="grid h-9 w-9 place-items-center rounded-xl bg-forest text-white">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+                  <path d="m2.5 9.2 9.5-5 9.5 5-9.5 5-9.5-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                  <path d="M6.5 11.4v4.1c3.4 2.6 7.6 2.6 11 0v-4.1M21.5 9.2v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              <span class="text-lg font-extrabold tracking-tight text-forest">maarifa</span>
+            </a>
+            <p class="mt-4 max-w-sm text-sm leading-6 text-slate-500">Connecting Tanzanian students with the knowledge and teachers that help them thrive.</p>
+            <a href="mailto:maarifayetutanzania@gmail.com" class="mt-4 inline-flex text-sm font-semibold text-slate-700 transition hover:text-forest">maarifayetutanzania@gmail.com</a>
+          </div>
+
+          <div>
+            <h2 class="text-sm font-extrabold text-ink">Explore</h2>
+            <ul class="mt-4 space-y-3 text-sm font-medium text-slate-500">
+              <li><a href="#about" class="transition hover:text-forest">About Maarifa</a></li>
+              <li><a href="#students" class="transition hover:text-forest">For Students</a></li>
+              <li><a href="#teachers" class="transition hover:text-forest">For Teachers</a></li>
+              <li><a href="#features" class="transition hover:text-forest">Features</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h2 class="text-sm font-extrabold text-ink">Say hello</h2>
+            <a
+              href="https://www.instagram.com/maarifa_app?psln=M2ZuMmt5Z2ZpZDlz"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-forest"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+                <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.7" />
+                <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.7" />
+                <circle cx="17.5" cy="6.7" r="1" fill="currentColor" />
+              </svg>
+              Instagram
+            </a>
+            <div class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium text-slate-400">
+              <a id="terms-btn" href="#terms-modal" aria-haspopup="dialog" class="transition hover:text-forest">Terms of Service</a>
+              <a id="privacy-btn" href="#privacy-modal" aria-haspopup="dialog" class="transition hover:text-forest">Privacy Policy</a>
+            </div>
+          </div>
+        </div>
+        <div class="mt-10 flex flex-col gap-3 border-t border-slate-100 pt-6 text-xs font-medium text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <p>© 2026 Maarifa. All rights reserved.</p>
+          <p>Learning has no limits.</p>
+        </div>
+      </div>
+    </footer>
+
+    <div
+      id="terms-modal"
+      class="modal-backdrop fixed inset-0 z-50 hidden items-stretch justify-end bg-slate-900/60 opacity-0 backdrop-blur-sm transition-opacity duration-200"
+      aria-hidden="true"
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="terms-title"
+        tabindex="-1"
+        class="modal-drawer flex h-full max-h-[85vh] w-full max-w-3xl translate-x-full flex-col self-center overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl transition-transform duration-200 sm:mr-4 lg:mr-8"
+      >
+        <header class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white/95 px-6 py-5 backdrop-blur sm:px-8">
+          <div>
+            <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Maarifa · Legal</p>
+            <h2 id="terms-title" class="mt-1 text-2xl font-extrabold tracking-tight text-ink">Terms of Service</h2>
+            <p class="mt-1 text-sm text-slate-500">Last updated: October 2026</p>
+          </div>
+          <button
+            type="button"
+            data-close-modal
+            aria-label="Close Terms of Service"
+            class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-2xl leading-none text-slate-600 transition hover:bg-slate-200 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2"
+          >×</button>
+        </header>
+        <div class="space-y-7 px-6 py-6 text-sm leading-7 text-slate-600 sm:px-8 sm:py-8">
+          <p>These Terms of Service govern your access to and use of Maarifa’s learning platform and services. By creating an account or using Maarifa, you agree to these terms. If you do not agree, do not use the service.</p>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">1. Eligibility and account types</h3>
+            <p class="mt-2">Maarifa provides accounts for secondary school students and educators. Students should provide accurate information, including their grade or Form level. A parent or guardian should assist a student who is not legally able to accept these terms. Educators must provide accurate identity and payment details and may be asked to complete verification before publishing materials or receiving payouts. Keep your sign-in details secure and notify us promptly if you suspect unauthorized account access.</p>
+          </section>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">2. Subscriptions and payments</h3>
+            <p class="mt-2">Where paid subscriptions are offered, the applicable price and subscription period will be shown before payment. Subscription transactions may be processed through AzamPay and supported mobile money services, including M-Pesa, Tigo Pesa, and Airtel Money. You authorize the payment provider and your mobile money operator to process transactions you initiate. Payment-provider terms may also apply. Contact us if you believe a transaction was made in error.</p>
+          </section>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">3. Educator materials, ownership, and revenue</h3>
+            <p class="mt-2">Educators retain ownership of the original materials they create. By submitting materials, educators grant Maarifa a non-exclusive permission to host, display, distribute, and make those materials available to students through the service. Educators are responsible for ensuring they have the rights and permissions needed to share their materials and that submissions do not infringe another person’s copyright or other rights.</p>
+            <p class="mt-2">Educators must not upload copied, unlawfully obtained, misleading, or otherwise unauthorized content. Revenue distribution, where available, is calculated under the platform’s applicable revenue rules using verified student engagement and eligible transactions. Payouts are processed on a monthly basis through supported payment channels, subject to verification, payment-provider requirements, and any clearly communicated adjustments or fees. Maarifa does not claim ownership of educator-created content.</p>
+          </section>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">4. Prohibited conduct and account termination</h3>
+            <p class="mt-2">You may not misuse the service, interfere with its security or operation, attempt to access another person’s account, manipulate engagement or payment activity, or upload unlawful, harmful, or infringing content. We may restrict, suspend, or terminate access where we reasonably believe these terms have been violated, where required to protect users or the platform, or where required by law. Where appropriate, we will provide notice and an opportunity to address the issue.</p>
+          </section>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">5. Disclaimers and governing law</h3>
+            <p class="mt-2">Maarifa is provided on an “as available” basis. We work to keep learning materials and services useful and available, but do not guarantee uninterrupted access, error-free operation, or a particular academic outcome. To the extent permitted by law, Maarifa disclaims implied warranties and is not responsible for indirect or consequential losses arising from use of the service. These terms are governed by the laws of the United Republic of Tanzania, subject to applicable consumer protections.</p>
+          </section>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">6. Contact</h3>
+            <p class="mt-2">Questions about these terms? Contact us at <a class="font-bold text-forest underline decoration-emerald-300 underline-offset-4" href="mailto:maarifayetutanzania@gmail.com">maarifayetutanzania@gmail.com</a>.</p>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <div
+      id="privacy-modal"
+      class="modal-backdrop fixed inset-0 z-50 hidden items-stretch justify-end bg-slate-900/60 opacity-0 backdrop-blur-sm transition-opacity duration-200"
+      aria-hidden="true"
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="privacy-title"
+        tabindex="-1"
+        class="modal-drawer flex h-full max-h-[85vh] w-full max-w-3xl translate-x-full flex-col self-center overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl transition-transform duration-200 sm:mr-4 lg:mr-8"
+      >
+        <header class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white/95 px-6 py-5 backdrop-blur sm:px-8">
+          <div>
+            <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Maarifa · Legal</p>
+            <h2 id="privacy-title" class="mt-1 text-2xl font-extrabold tracking-tight text-ink">Privacy Policy</h2>
+            <p class="mt-1 text-sm text-slate-500">Last updated: October 2026</p>
+          </div>
+          <button
+            type="button"
+            data-close-modal
+            aria-label="Close Privacy Policy"
+            class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-2xl leading-none text-slate-600 transition hover:bg-slate-200 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2"
+          >×</button>
+        </header>
+        <div class="space-y-7 px-6 py-6 text-sm leading-7 text-slate-600 sm:px-8 sm:py-8">
+          <p>This Privacy Policy describes how Maarifa collects, uses, and protects information when you use our learning platform. We handle information to provide the service and support students and educators.</p>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">1. Information we collect</h3>
+            <p class="mt-2">Depending on how you use Maarifa, information may include your full name, phone number used for account and payment processing, student grade or Form level, and educational materials you upload as an educator. We may also process transaction records and service activity needed to operate accounts, verify payments, and understand material engagement.</p>
+          </section>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">2. How we use information</h3>
+            <p class="mt-2">We use information to create and secure accounts; provide access to study resources; organize learning materials by subject and level; process or verify subscriptions and payouts; calculate engagement-based revenue splits for educators; maintain and improve the service; and respond to support requests.</p>
+          </section>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">3. When information is shared</h3>
+            <p class="mt-2">We share the minimum information needed with payment gateway aggregators, including AzamPay, strictly to verify transactions and process subscriptions or educator payouts. Payment information is also handled by the relevant mobile money operator under its own terms. We do not authorize payment providers to use Maarifa account information for unrelated purposes through our integration.</p>
+          </section>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">4. Security practices</h3>
+            <p class="mt-2">We use encrypted data transmission and Firebase security rules to help protect information and limit access. We apply access controls appropriate to operating the service. No internet transmission or storage system can be guaranteed to be completely secure, so please protect your account credentials and contact us if you suspect a security issue.</p>
+          </section>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">5. Your rights and data retention</h3>
+            <p class="mt-2">You may request access to or an export of your account data, or request account deletion, by emailing <a class="font-bold text-forest underline decoration-emerald-300 underline-offset-4" href="mailto:maarifayetutanzania@gmail.com">maarifayetutanzania@gmail.com</a>. We may need to verify your identity before fulfilling a request. We retain information for as long as needed to provide the service, meet legitimate operational needs, resolve disputes, and comply with legal or financial recordkeeping requirements. Where information is no longer required, we will take reasonable steps to delete or de-identify it.</p>
+          </section>
+          <section>
+            <h3 class="text-base font-extrabold text-ink">6. Contact</h3>
+            <p class="mt-2">For privacy questions or data requests, contact <a class="font-bold text-forest underline decoration-emerald-300 underline-offset-4" href="mailto:maarifayetutanzania@gmail.com">maarifayetutanzania@gmail.com</a>.</p>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <div
+      id="upload-modal"
+      class="upload-backdrop fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto bg-slate-900/60 p-3 opacity-0 backdrop-blur-sm transition-opacity duration-200 sm:p-6"
+      aria-hidden="true"
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="upload-title"
+        tabindex="-1"
+        class="upload-card relative flex max-h-[94vh] w-full max-w-md translate-y-4 flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl transition-transform duration-200"
+      >
+        <header class="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+          <a href="#" class="flex items-center gap-2 text-lg font-extrabold tracking-tight text-forest" aria-label="Maarifa Teacher">
+            <span class="grid h-9 w-9 place-items-center rounded-xl bg-forest text-white">
+              <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+                <path d="m2.5 9.2 9.5-5 9.5 5-9.5 5-9.5-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                <path d="M6.5 11.4v4.1c3.4 2.6 7.6 2.6 11 0v-4.1M21.5 9.2v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+            Maarifa Teacher
+          </a>
+          <button
+            type="button"
+            data-close-upload
+            aria-label="Exit upload screen"
+            class="grid h-10 w-10 place-items-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+              <path d="M10 17l5-5-5-5m5 5H3m10-9h5a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </header>
+
+        <div class="min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-6 sm:px-6">
+          <div class="mb-6">
+            <p class="text-xs font-bold uppercase tracking-[0.16em] text-leaf">Share your knowledge</p>
+            <h2 id="upload-title" class="mt-1 text-2xl font-extrabold tracking-tight text-ink">Upload material</h2>
+          </div>
+
+          <form id="material-upload-form" class="space-y-4">
+            <div>
+              <label for="material-title" class="mb-1.5 block text-sm font-bold text-slate-700">Title</label>
+              <input
+                id="material-title"
+                name="title"
+                type="text"
+                autocomplete="off"
+                placeholder="Enter material title"
+                class="w-full rounded-2xl border border-transparent bg-slate-100 px-4 py-3.5 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50"
+              />
+            </div>
+            <div>
+              <label for="material-description" class="mb-1.5 block text-sm font-bold text-slate-700">Description</label>
+              <input
+                id="material-description"
+                name="description"
+                type="text"
+                autocomplete="off"
+                placeholder="Briefly describe your material"
+                class="w-full rounded-2xl border border-transparent bg-slate-100 px-4 py-3.5 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50"
+              />
+            </div>
+            <div>
+              <label for="material-subject" class="mb-1.5 block text-sm font-bold text-slate-700">Subject</label>
+              <input
+                id="material-subject"
+                name="subject"
+                type="text"
+                autocomplete="off"
+                placeholder="e.g. Physics"
+                class="w-full rounded-2xl border border-transparent bg-slate-100 px-4 py-3.5 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50"
+              />
+            </div>
+            <div>
+              <label for="material-topic" class="mb-1.5 block text-sm font-bold text-slate-700">Topic</label>
+              <input
+                id="material-topic"
+                name="topic"
+                type="text"
+                autocomplete="off"
+                placeholder="e.g. Thermodynamics"
+                class="w-full rounded-2xl border border-transparent bg-slate-100 px-4 py-3.5 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50"
+              />
+            </div>
+            <div>
+              <label for="material-form" class="mb-1.5 block text-sm font-bold text-slate-700">Form / Class</label>
+              <div class="relative">
+                <select
+                  id="material-form"
+                  name="form"
+                  class="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3.5 pr-11 text-sm font-semibold text-ink outline-none transition focus:border-forest focus:ring-4 focus:ring-emerald-50"
+                >
+                  <option>Form I</option>
+                  <option>Form II</option>
+                  <option>Form III</option>
+                  <option>Form IV</option>
+                  <option>Form V</option>
+                  <option>Form VI</option>
+                </select>
+                <svg aria-hidden="true" viewBox="0 0 20 20" class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" fill="none">
+                  <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+            </div>
+            <div>
+              <span class="mb-1.5 block text-sm font-bold text-slate-700">PDF material</span>
+              <input id="material-pdf" name="file" type="file" accept="application/pdf,.pdf" class="sr-only" />
+              <button
+                id="choose-pdf"
+                type="button"
+                class="flex min-h-12 w-full items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-emerald-300 hover:bg-emerald-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2"
+              >
+                <span
+                  id="pdf-badge"
+                  class="max-w-[45%] shrink-0 truncate rounded-full bg-red-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-red-600"
+                >PDF</span>
+                <span class="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">Choose PDF file</span>
+                <span id="pdf-filename" class="max-w-[38%] truncate text-xs font-medium text-slate-500" aria-live="polite"></span>
+              </button>
+            </div>
+
+            <p id="upload-notice" role="status" aria-live="polite" tabindex="-1" class="hidden rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-forest"></p>
+            <p id="upload-error" role="alert" class="hidden rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"></p>
+
+            <button
+              type="submit"
+              class="w-full rounded-full bg-forest px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-forest/15 transition hover:bg-leaf focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2"
+            >Submit for review</button>
+          </form>
+        </div>
+
+        <nav aria-label="Teacher app navigation" class="grid shrink-0 grid-cols-4 border-t border-slate-100 bg-white px-2 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2">
+          <span class="flex flex-col items-center gap-1 rounded-2xl px-1 py-2 text-[10px] font-semibold text-slate-400">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+              <rect x="4" y="4" width="6" height="6" rx="1.2" stroke="currentColor" stroke-width="1.7" />
+              <rect x="14" y="4" width="6" height="6" rx="1.2" stroke="currentColor" stroke-width="1.7" />
+              <rect x="4" y="14" width="6" height="6" rx="1.2" stroke="currentColor" stroke-width="1.7" />
+              <rect x="14" y="14" width="6" height="6" rx="1.2" stroke="currentColor" stroke-width="1.7" />
+            </svg>
+            Dashboard
+          </span>
+          <span aria-current="page" class="flex flex-col items-center gap-1 rounded-2xl bg-[#DCFCE7] px-1 py-2 text-[10px] font-extrabold text-forest">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+              <path d="M12 16V4m-4 4 4-4 4 4M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Upload
+          </span>
+          <span class="flex flex-col items-center gap-1 rounded-2xl px-1 py-2 text-[10px] font-semibold text-slate-400">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+              <path d="M3.5 7.5h7l2 2h8v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h4l2 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Materials
+          </span>
+          <span class="flex flex-col items-center gap-1 rounded-2xl px-1 py-2 text-[10px] font-semibold text-slate-400">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none">
+              <rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.7" />
+              <path d="M3 10h18m-13 5h3m6-12-3 3m-5-3 3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Earnings
+          </span>
+        </nav>
+      </section>
+    </div>
+
+    <script>
+      (() => {
+        const triggers = [
+          ["terms-btn", "terms-modal"],
+          ["privacy-btn", "privacy-modal"],
+        ];
+        let activeModal = null;
+        let previousFocus = null;
+        let closeTimer;
+
+        function closeModal() {
+          if (!activeModal) return;
+          const modal = activeModal;
+          const drawer = modal.querySelector(".modal-drawer");
+          modal.classList.add("opacity-0");
+          drawer.classList.add("translate-x-full");
+          modal.setAttribute("aria-hidden", "true");
+          activeModal = null;
+          document.body.classList.remove("overflow-hidden");
+          window.clearTimeout(closeTimer);
+          closeTimer = window.setTimeout(() => modal.classList.add("hidden"), 200);
+          previousFocus?.focus();
+        }
+
+        for (const [triggerId, modalId] of triggers) {
+          const trigger = document.getElementById(triggerId);
+          const modal = document.getElementById(modalId);
+          const drawer = modal.querySelector(".modal-drawer");
+
+          trigger.addEventListener("click", (event) => {
+            event.preventDefault();
+            window.clearTimeout(closeTimer);
+            if (activeModal && activeModal !== modal) closeModal();
+            previousFocus = trigger;
+            activeModal = modal;
+            modal.classList.remove("hidden");
+            modal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("overflow-hidden");
+            requestAnimationFrame(() => {
+              modal.classList.remove("opacity-0");
+              drawer.classList.remove("translate-x-full");
+              modal.querySelector("[data-close-modal]").focus();
+            });
+          });
+
+          modal.querySelector("[data-close-modal]").addEventListener("click", closeModal);
+          modal.addEventListener("click", (event) => {
+            if (event.target === modal) closeModal();
+          });
+          drawer.addEventListener("keydown", (event) => {
+            if (event.key !== "Tab") return;
+            const focusable = [...drawer.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first.focus();
+            }
+          });
+        }
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && activeModal) closeModal();
+        });
+      })();
+    </script>
+    <script>
+      (() => {
+        const modal = document.getElementById("upload-modal");
+        const card = modal.querySelector(".upload-card");
+        const closeButton = modal.querySelector("[data-close-upload]");
+        const fileInput = document.getElementById("material-pdf");
+        const choosePdf = document.getElementById("choose-pdf");
+        const pdfBadge = document.getElementById("pdf-badge");
+        const fileName = document.getElementById("pdf-filename");
+        const form = document.getElementById("material-upload-form");
+        const notice = document.getElementById("upload-notice");
+        const error = document.getElementById("upload-error");
+        let active = false;
+        let previousFocus = null;
+        let closeTimer;
+
+        function openUpload(event) {
+          event.preventDefault();
+          window.clearTimeout(closeTimer);
+          previousFocus = event.currentTarget;
+          active = true;
+          modal.classList.remove("hidden");
+          modal.setAttribute("aria-hidden", "false");
+          document.body.classList.add("overflow-hidden");
+          requestAnimationFrame(() => {
+            modal.classList.remove("opacity-0");
+            card.classList.remove("translate-y-4");
+            document.getElementById("material-title").focus();
+          });
+        }
+
+        function closeUpload() {
+          if (!active) return;
+          active = false;
+          modal.classList.add("opacity-0");
+          card.classList.add("translate-y-4");
+          modal.setAttribute("aria-hidden", "true");
+          document.body.classList.remove("overflow-hidden");
+          window.clearTimeout(closeTimer);
+          closeTimer = window.setTimeout(() => modal.classList.add("hidden"), 200);
+          previousFocus?.focus();
+        }
+
+        document.querySelectorAll("[data-open-upload]").forEach((trigger) => {
+          trigger.addEventListener("click", openUpload);
+        });
+        closeButton.addEventListener("click", closeUpload);
+        modal.addEventListener("click", (event) => {
+          if (event.target === modal) closeUpload();
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && active) closeUpload();
+          if (event.key === "Tab" && active) {
+            const focusable = [...card.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first.focus();
+            }
+          }
+        });
+
+        choosePdf.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files?.[0];
+          error.classList.add("hidden");
+          error.textContent = "";
+          if (!file) {
+            pdfBadge.textContent = "PDF";
+            fileName.textContent = "";
+            choosePdf.setAttribute("aria-label", "Choose PDF file");
+            return;
+          }
+          if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+            fileInput.value = "";
+            pdfBadge.textContent = "PDF";
+            fileName.textContent = "";
+            error.textContent = "Please choose a PDF file.";
+            error.classList.remove("hidden");
+            return;
+          }
+          pdfBadge.textContent = file.name;
+          pdfBadge.title = file.name;
+          fileName.textContent = "";
+          choosePdf.setAttribute("aria-label", `Selected PDF: ${file.name}. Choose another PDF file.`);
+        });
+
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          error.classList.add("hidden");
+          error.textContent = "";
+          notice.textContent = "To submit materials for real-time moderation and track live student engagement scores, please download the full Maarifa Android app. Contact maarifayetutanzania@gmail.com for access.";
+          notice.classList.remove("hidden");
+          notice.focus();
+        });
+      })();
+    </script>
+  </body>
+</html>
