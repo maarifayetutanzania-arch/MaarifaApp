@@ -19,8 +19,12 @@
 app/google-services.json
 
 # Node / Cloud Functions
+.env
+!.env.example
 functions/node_modules/
 functions/lib/
+functions/azam-pay-gateway/node_modules/
+functions/azam-pay-gateway/dist/
 firebase-debug.log
 firebase-debug.*.log
 .firebase/

@@ -81,6 +81,13 @@ pending subscription record, computing correct start/end dates (including stacki
 renewals on top of remaining time), activating the subscription only after verification,
 logging transaction status, and notifying the student — is already built.
 
+AzamPay configuration is scaffolded as a separate NestJS service in
+`functions/azam-pay-gateway/`; it does not yet replace the Firebase payment stub or make
+gateway API calls. To run it locally, copy `.env.example` to `.env` in that directory,
+fill in your AzamPay values, then run `npm install`, `npm run build`, and `npm start`.
+The service validates all required AzamPay settings and URL values at startup. Keep `.env`
+local; it is ignored by Git.
+
 Two functions in `functions/src/payments.ts` are what you touch:
 
 - **`callPaymentGatewayStub(...)`** — replace the body with your real "charge this
