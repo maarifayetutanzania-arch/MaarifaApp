@@ -9,7 +9,7 @@ export function AdminLayout() {
   if (loading) {
     return (
       <div className="login-shell">
-        <div className="login-card" style={{ textCenter: "center", alignItems: "center" }}>
+        <div className="login-card" style={{ textAlign: "center", alignItems: "center" }}>
           <p style={{ margin: 0, fontWeight: 500 }}>Inahakiki haki za Admin...</p>
         </div>
       </div>

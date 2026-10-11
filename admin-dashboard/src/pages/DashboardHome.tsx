@@ -40,7 +40,7 @@ export function DashboardHome() {
   // Kuhesabu jumla ya kiasi cha payouts zinazosubiri
   const totalPendingPayoutAmount = useMemo(() => {
     if (!Array.isArray(pendingPayouts)) return 0;
-    return pendingPayouts.reduce((acc, curr) => acc + (curr.amountTzs || 0), 0);
+    return pendingPayouts.reduce((acc, curr) => acc + (curr.calculatedAmountTzs || 0), 0);
   }, [pendingPayouts]);
 
   const isLoading = loadingTeachers || loadingMaterials || loadingSubs || loadingPayouts;

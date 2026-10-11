@@ -104,11 +104,13 @@ based on user claim alone").
 
 ## 4. Admin web dashboard (`admin-dashboard/`)
 
-A separate React + TypeScript app (Vite), deployed to **Firebase Hosting** on the same
-project. It never writes to Firestore directly for anything sensitive — every approve/
-reject/payout action calls a Cloud Function in `functions/src/adminActions.ts`, which
-re-checks `role == "ADMIN"` server-side before writing. `firestore.rules` also blocks
-those collections from direct client writes, so this is enforced twice.
+A separate React + TypeScript app (Vite), deployed to **GitHub Pages** by the
+`.github/workflows/admin-dashboard.yml` workflow. This keeps the dashboard separate from
+the landing page served by Firebase Hosting. It never writes to Firestore directly for
+anything sensitive — every approve/reject/payout action calls a Cloud Function in
+`functions/src/adminActions.ts`, which re-checks `role == "ADMIN"` server-side before
+writing. `firestore.rules` also blocks those collections from direct client writes, so
+this is enforced twice.
 
 **Setup:**
 
@@ -119,25 +121,23 @@ those collections from direct client writes, so this is enforced twice.
    - Firebase console → Authentication → Add user (email + password)
    - Firestore console → `users` collection → create a document with that user's UID as
      the document ID, containing at minimum `{ role: "ADMIN", fullName: "...", email: "..." }`
-3. Install and run locally:
+3. In GitHub, open **Settings → Pages** and set the build and deployment source to
+   **GitHub Actions**. Push to `main` to build and deploy the dashboard. The site URL is
+   `https://maarifayetutanzania-arch.github.io/MaarifaApp/`.
+4. In Firebase console → Authentication → Settings → Authorized domains, add
+   `maarifayetutanzania-arch.github.io` so admins can sign in from GitHub Pages.
+5. Install and run locally:
    ```bash
    cd admin-dashboard
    npm install
    npm run dev
    ```
-4. Deploy Cloud Functions (adds the new `adminApprove*`/`adminReject*`/`adminMarkPayoutPaid`
+6. Deploy Cloud Functions (adds the new `adminApprove*`/`adminReject*`/`adminMarkPayoutPaid`
    functions this dashboard depends on — skip if already deployed from §1 step 8, just
    redeploy after adding `adminActions.ts`):
    ```bash
    cd functions && npm run deploy
    ```
-5. Deploy the dashboard itself:
-   ```bash
-   cd admin-dashboard
-   npm run deploy
-   ```
-   This builds and runs `firebase deploy --only hosting`, publishing to
-   `https://<your-project-id>.web.app`.
 
 **Pages:** Overview (live counts), Teachers (verification queue), Content (moderation
 queue), Subscriptions (read-only payment log), Payouts (review → approve → mark paid,
