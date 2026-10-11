@@ -17,6 +17,231 @@
     />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+      (() => {
+        document.addEventListener("DOMContentLoaded", () => {
+        const modal = document.getElementById("registration-modal");
+        const card = modal.querySelector(".registration-card");
+        const choice = document.getElementById("registration-choice");
+        const forms = {
+          student: document.getElementById("student-registration-form"),
+          teacher: document.getElementById("teacher-registration-form"),
+        };
+        let active = false;
+        let previousFocus = null;
+        let closeTimer;
+        let sessionsCompleted = 3;
+        let teacherMaterialTotal = 4;
+
+        function selectRole(role) {
+          choice.classList.add("hidden");
+          for (const [formRole, form] of Object.entries(forms)) {
+            form.classList.toggle("hidden", formRole !== role);
+          }
+          modal.querySelector('[role="dialog"]').setAttribute("aria-labelledby", `${role}-registration-heading`);
+          const firstInput = forms[role]?.querySelector("input");
+          firstInput?.focus();
+        }
+
+        function openRegistration(event) {
+          event.preventDefault();
+          window.clearTimeout(closeTimer);
+          previousFocus = event.currentTarget;
+          active = true;
+          modal.classList.remove("hidden");
+          modal.setAttribute("aria-hidden", "false");
+          document.body.classList.add("overflow-hidden");
+          const role = event.currentTarget.dataset.registerRole;
+          if (role) {
+            selectRole(role);
+          } else {
+            choice.classList.remove("hidden");
+            Object.values(forms).forEach((form) => form.classList.add("hidden"));
+            modal.querySelector('[role="dialog"]').setAttribute("aria-labelledby", "registration-title");
+            modal.querySelector("[data-close-registration]").focus();
+          }
+          requestAnimationFrame(() => modal.classList.remove("opacity-0"));
+        }
+
+        function closeRegistration() {
+          if (!active) return;
+          active = false;
+          modal.classList.add("opacity-0");
+          modal.setAttribute("aria-hidden", "true");
+          document.body.classList.remove("overflow-hidden");
+          window.clearTimeout(closeTimer);
+          closeTimer = window.setTimeout(() => modal.classList.add("hidden"), 200);
+          previousFocus?.focus();
+        }
+
+        document.querySelectorAll("[data-open-registration], [data-register-role]").forEach((trigger) => {
+          trigger.addEventListener("click", openRegistration);
+        });
+        document.querySelectorAll("[data-select-role]").forEach((button) => {
+          button.addEventListener("click", () => selectRole(button.dataset.selectRole));
+        });
+        document.querySelectorAll("[data-registration-back]").forEach((button) => {
+          button.addEventListener("click", () => {
+            Object.values(forms).forEach((form) => form.classList.add("hidden"));
+            choice.classList.remove("hidden");
+            modal.querySelector('[role="dialog"]').setAttribute("aria-labelledby", "registration-title");
+            modal.querySelector("[data-select-role]").focus();
+          });
+        });
+        modal.querySelector("[data-close-registration]").addEventListener("click", closeRegistration);
+        modal.addEventListener("click", (event) => {
+          if (event.target === modal) closeRegistration();
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && active) closeRegistration();
+          if (event.key !== "Tab" || !active) return;
+          const focusable = [...card.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled])')]
+            .filter((element) => !element.closest(".hidden"));
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        });
+
+        const experience = document.getElementById("app-experience");
+        const tabs = [...document.querySelectorAll("[data-experience-tab]")];
+        const panels = [...document.querySelectorAll("[data-experience-panel]")];
+        let activeExperience = "student";
+
+        function setExperience(role) {
+          activeExperience = role;
+          tabs.forEach((tab) => {
+            const selected = tab.dataset.experienceTab === role;
+            tab.setAttribute("aria-selected", String(selected));
+            tab.classList.toggle("bg-forest", selected);
+            tab.classList.toggle("text-white", selected);
+            tab.classList.toggle("bg-slate-100", !selected);
+            tab.classList.toggle("text-slate-600", !selected);
+          });
+          panels.forEach((panel) => {
+            const selected = panel.dataset.experiencePanel === role;
+            panel.classList.toggle("hidden", !selected);
+            panel.setAttribute("aria-hidden", String(!selected));
+          });
+        }
+
+        function showExperience(role, name) {
+          setExperience(role);
+          const firstName = name.trim().split(/\s+/)[0] || (role === "teacher" ? "Teacher" : "Learner");
+          document.getElementById(role === "teacher" ? "teacher-greeting" : "student-greeting").textContent = firstName;
+          experience.classList.remove("hidden");
+          experience.setAttribute("aria-hidden", "false");
+          if (role === "student") applyStudentFilters();
+          closeRegistration();
+          window.setTimeout(() => experience.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+        }
+
+        tabs.forEach((tab) => tab.addEventListener("click", () => setExperience(tab.dataset.experienceTab)));
+        document.querySelectorAll("[data-preview-app]").forEach((trigger) => {
+          trigger.addEventListener("click", (event) => {
+            event.preventDefault();
+            experience.classList.remove("hidden");
+            experience.setAttribute("aria-hidden", "false");
+            setExperience(activeExperience);
+            experience.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        });
+
+        for (const [role, form] of Object.entries(forms)) {
+          const password = form.querySelector('input[name="password"]');
+          const confirmation = form.querySelector('input[name="confirmPassword"]');
+          const contact = form.querySelector('input[name="contact"]');
+          const error = document.getElementById(`${role}-registration-error`);
+          [password, confirmation, contact].forEach((input) => {
+            input.addEventListener("input", () => {
+              input.setCustomValidity("");
+              if (input === password) confirmation.setCustomValidity("");
+              error.classList.add("hidden");
+              error.textContent = "";
+            });
+          });
+          form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            error.classList.add("hidden");
+            error.textContent = "";
+            const contactValue = contact.value.trim();
+            const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactValue);
+            const validPhone = /^\+?[\d\s()-]{7,}$/.test(contactValue) && /\d{7,}/.test(contactValue.replace(/\D/g, ""));
+            contact.setCustomValidity(validEmail || validPhone ? "" : "Enter a valid email address or phone number.");
+            confirmation.setCustomValidity(password.value === confirmation.value ? "" : "Passwords do not match.");
+            if (!form.reportValidity()) {
+              error.textContent = confirmation.validationMessage || contact.validationMessage || "Please check the highlighted fields and try again.";
+              error.classList.remove("hidden");
+              return;
+            }
+            showExperience(role, form.querySelector('[name="name"]').value);
+          });
+        }
+
+        function applyStudentFilters() {
+          const selectedForm = document.getElementById("student-form-filter").value;
+          const selectedSubject = document.getElementById("student-subject-filter").value;
+          const materials = [...document.querySelectorAll("[data-student-material]")];
+          let visible = 0;
+          materials.forEach((material) => {
+            const matches = (selectedForm === "all" || material.dataset.form === selectedForm)
+              && (selectedSubject === "all" || material.dataset.subject === selectedSubject);
+            material.classList.toggle("hidden", !matches);
+            if (matches) visible += 1;
+          });
+          document.getElementById("material-count").textContent = `${visible} ${visible === 1 ? "resource" : "resources"}`;
+          document.getElementById("student-empty-state").classList.toggle("hidden", visible > 0);
+        }
+        document.getElementById("student-form-filter").addEventListener("change", applyStudentFilters);
+        document.getElementById("student-subject-filter").addEventListener("change", applyStudentFilters);
+
+        document.querySelectorAll("[data-student-material]").forEach((material) => {
+          material.addEventListener("click", () => {
+            document.getElementById("reader-title").textContent = material.dataset.title;
+            document.getElementById("reader-kind").textContent = `${material.dataset.kind} · ${material.dataset.subject[0].toUpperCase()}${material.dataset.subject.slice(1)}`;
+            document.getElementById("reader-content").textContent = material.dataset.content;
+          });
+        });
+        document.getElementById("complete-study-session").addEventListener("click", (event) => {
+          sessionsCompleted = Math.min(sessionsCompleted + 1, 5);
+          document.getElementById("study-progress-label").textContent = `${sessionsCompleted} of 5 sessions`;
+          document.getElementById("study-progress-bar").style.width = `${sessionsCompleted * 20}%`;
+          event.currentTarget.textContent = sessionsCompleted === 5 ? "Weekly goal complete ✓" : "Session complete ✓";
+          event.currentTarget.classList.add("bg-leaf");
+        });
+
+        window.addEventListener("maarifa:material-published", (event) => {
+          const { title, subject, form } = event.detail;
+          const row = document.createElement("li");
+          row.className = "flex items-center gap-3 py-3";
+          const badge = document.createElement("span");
+          badge.className = "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-xs font-extrabold text-forest";
+          badge.textContent = "PDF";
+          const description = document.createElement("span");
+          description.className = "min-w-0 flex-1";
+          const titleNode = document.createElement("span");
+          titleNode.className = "block truncate text-sm font-extrabold text-ink";
+          titleNode.textContent = title;
+          const details = document.createElement("span");
+          details.className = "text-xs text-slate-500";
+          details.textContent = `${subject} · ${form} · Just now`;
+          description.append(titleNode, details);
+          const status = document.createElement("span");
+          status.className = "rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-extrabold text-amber-700";
+          status.textContent = "In review";
+          row.append(badge, description, status);
+          document.getElementById("teacher-material-list").prepend(row);
+          teacherMaterialTotal += 1;
+          document.getElementById("teacher-material-total").textContent = String(teacherMaterialTotal);
+        });
+        });
+      })();
+    </script>
+    <script>
       tailwind.config = {
         theme: {
           extend: {
@@ -66,6 +291,18 @@
         display: flex;
       }
 
+      .registration-backdrop[aria-hidden="false"] {
+        display: flex;
+      }
+
+      .registration-card {
+        transform: translateY(1rem) scale(0.98);
+      }
+
+      .registration-backdrop[aria-hidden="false"] .registration-card {
+        transform: translateY(0) scale(1);
+      }
+
       @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
@@ -103,14 +340,16 @@
 
         <div class="flex items-center gap-2 sm:gap-3">
           <a
-            href="#contact"
+            href="#app-experience"
+            data-preview-app
             class="hidden rounded-full px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:inline-flex"
-          >Sign In</a>
+          >App preview</a>
           <a
             href="#register"
+            data-open-registration
             class="inline-flex items-center gap-2 rounded-full bg-forest px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-forest/15 transition hover:-translate-y-0.5 hover:bg-leaf sm:px-5"
           >
-            Get started
+            Register
             <svg aria-hidden="true" viewBox="0 0 20 20" class="h-4 w-4" fill="none">
               <path d="M4.2 10h11.6m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
@@ -136,7 +375,8 @@
             </p>
             <div class="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
-                href="#students"
+                href="#register"
+                data-register-role="student"
                 class="inline-flex min-h-13 items-center justify-center gap-2 rounded-full bg-forest px-6 py-4 text-sm font-bold text-white shadow-xl shadow-forest/20 transition hover:-translate-y-0.5 hover:bg-leaf"
               >
                 Join as a student
@@ -145,11 +385,16 @@
                 </svg>
               </a>
               <a
-                href="#upload-modal"
-                data-open-upload
+                href="#register"
+                data-register-role="teacher"
                 class="inline-flex min-h-13 items-center justify-center rounded-full border border-slate-200 bg-white/80 px-6 py-4 text-sm font-bold text-ink transition hover:border-emerald-300 hover:bg-white"
               >Teach on Maarifa</a>
             </div>
+            <button
+              type="button"
+              data-preview-app
+              class="mt-4 inline-flex items-center gap-2 rounded-full px-2 py-2 text-sm font-bold text-forest transition hover:text-leaf"
+            >Preview the app experience <span aria-hidden="true">→</span></button>
             <div class="mt-9 flex items-center gap-3 text-sm text-slate-500">
               <div class="flex -space-x-2">
                 <span class="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-emerald-100 text-xs font-bold text-forest">F1</span>
@@ -292,7 +537,7 @@
                     Learning beyond school hours
                   </li>
                 </ul>
-                <a href="#register" class="mt-8 inline-flex items-center gap-2 rounded-full bg-forest px-5 py-3 text-sm font-bold text-white transition hover:bg-leaf">Start learning <span aria-hidden="true">→</span></a>
+                <a href="#register" data-register-role="student" class="mt-8 inline-flex items-center gap-2 rounded-full bg-forest px-5 py-3 text-sm font-bold text-white transition hover:bg-leaf">Start learning <span aria-hidden="true">→</span></a>
               </div>
             </article>
 
@@ -333,7 +578,7 @@
                     Transparent dashboard analytics
                   </li>
                 </ul>
-                <a href="#upload-modal" data-open-upload class="mt-8 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-ink transition hover:border-forest hover:text-forest">Become an educator <span aria-hidden="true">→</span></a>
+                <a href="#register" data-register-role="teacher" class="mt-8 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-ink transition hover:border-forest hover:text-forest">Become an educator <span aria-hidden="true">→</span></a>
               </div>
             </article>
           </div>
@@ -412,6 +657,111 @@
         </div>
       </section>
 
+      <section id="app-experience" class="hidden bg-white px-5 py-20 sm:px-8 sm:py-24 lg:px-10" aria-labelledby="experience-title" aria-hidden="true">
+        <div class="mx-auto max-w-7xl">
+          <div class="mx-auto max-w-2xl text-center">
+            <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-leaf">Inside Maarifa</p>
+            <h2 id="experience-title" class="mt-4 text-3xl font-extrabold tracking-[-0.04em] text-ink sm:text-4xl">A learning space made for real life.</h2>
+            <p class="mt-4 leading-7 text-slate-600">Explore the student library or step into the educator dashboard. This interactive preview runs right here in your browser.</p>
+          </div>
+
+          <div class="mt-8 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Choose an app experience">
+            <button type="button" id="student-view-tab" data-experience-tab="student" role="tab" aria-controls="student-experience" aria-selected="true" class="rounded-full bg-forest px-5 py-3 text-sm font-extrabold text-white transition hover:bg-leaf">Student experience</button>
+            <button type="button" id="teacher-view-tab" data-experience-tab="teacher" role="tab" aria-controls="teacher-dashboard-panel" aria-selected="false" class="rounded-full bg-slate-100 px-5 py-3 text-sm font-extrabold text-slate-600 transition hover:bg-emerald-50 hover:text-forest">Teacher dashboard</button>
+          </div>
+
+          <div class="mx-auto mt-8 max-w-6xl">
+            <section id="student-experience" role="tabpanel" aria-labelledby="student-view-tab" data-experience-panel="student" class="grid items-start gap-6 lg:grid-cols-[.78fr_1.22fr]">
+              <div class="overflow-hidden rounded-[2rem] border border-emerald-100 bg-[#F2FBF5] p-5 shadow-soft sm:p-7">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Your learning space</p>
+                    <h3 class="mt-1 text-xl font-extrabold text-ink">Habari, <span id="student-greeting">Learner</span> 👋</h3>
+                  </div>
+                  <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-2 text-[10px] font-extrabold text-forest shadow-sm"><span class="h-2 w-2 rounded-full bg-leaf"></span>Ready offline</span>
+                </div>
+                <div class="mt-6 grid grid-cols-2 gap-3">
+                  <label class="text-xs font-bold text-slate-600">Form
+                    <select id="student-form-filter" class="mt-1.5 w-full rounded-xl border border-emerald-100 bg-white px-3 py-3 text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-emerald-200">
+                      <option value="all">All forms</option>
+                      <option value="1">Form 1</option><option value="2">Form 2</option><option value="3">Form 3</option>
+                      <option value="4">Form 4</option><option value="5">Form 5</option><option value="6">Form 6</option>
+                    </select>
+                  </label>
+                  <label class="text-xs font-bold text-slate-600">Subject
+                    <select id="student-subject-filter" class="mt-1.5 w-full rounded-xl border border-emerald-100 bg-white px-3 py-3 text-sm font-bold text-ink outline-none focus:ring-2 focus:ring-emerald-200">
+                      <option value="all">All subjects</option><option value="biology">Biology</option><option value="physics">Physics</option><option value="mathematics">Mathematics</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="mt-6 flex items-center justify-between">
+                  <h4 class="font-extrabold text-ink">Study materials</h4>
+                  <span id="material-count" class="text-xs font-bold text-slate-500">3 resources</span>
+                </div>
+                <div id="student-material-list" class="mt-3 space-y-2">
+                  <button type="button" data-student-material data-title="Cell structure & organisation" data-subject="biology" data-form="2" data-kind="Verified notes" data-content="Explore how cells form the building blocks of life. Review the key differences between plant and animal cells, then test yourself by labelling each structure." class="student-material flex w-full items-center gap-3 rounded-2xl border border-emerald-100 bg-white p-3 text-left transition hover:border-emerald-300 hover:shadow-sm">
+                    <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-mint text-lg">🧬</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-extrabold text-ink">Cell structure &amp; organisation</span><span class="mt-1 block text-xs font-semibold text-slate-500">Biology · Form 2 · Verified notes</span></span><span aria-hidden="true" class="text-lg text-forest">→</span>
+                  </button>
+                  <button type="button" data-student-material data-title="Forces and Newton’s laws" data-subject="physics" data-form="3" data-kind="Study guide" data-content="A force changes an object's motion. Start with Newton’s first law: an object remains at rest or in uniform motion unless acted upon by a resultant force. Use F = ma to connect force, mass and acceleration." class="student-material flex w-full items-center gap-3 rounded-2xl border border-emerald-100 bg-white p-3 text-left transition hover:border-emerald-300 hover:shadow-sm">
+                    <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-50 text-lg">⚡</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-extrabold text-ink">Forces and Newton’s laws</span><span class="mt-1 block text-xs font-semibold text-slate-500">Physics · Form 3 · Study guide</span></span><span aria-hidden="true" class="text-lg text-forest">→</span>
+                  </button>
+                  <button type="button" data-student-material data-title="NECTA Mathematics · 2024" data-subject="mathematics" data-form="4" data-kind="Past paper" data-content="Past paper practice · Mathematics, Form 4. Try each question before checking your method. Focus on showing clear working for algebra, geometry and statistics questions." class="student-material flex w-full items-center gap-3 rounded-2xl border border-emerald-100 bg-white p-3 text-left transition hover:border-emerald-300 hover:shadow-sm">
+                    <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-50 text-lg">📝</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-extrabold text-ink">NECTA Mathematics · 2024</span><span class="mt-1 block text-xs font-semibold text-slate-500">Mathematics · Form 4 · Past paper</span></span><span aria-hidden="true" class="text-lg text-forest">→</span>
+                  </button>
+                  <p id="student-empty-state" class="hidden rounded-2xl bg-white p-4 text-sm font-semibold text-slate-500">No materials match those filters. Try another Form or subject.</p>
+                </div>
+                <div class="mt-5 rounded-2xl bg-white p-4">
+                  <div class="flex items-center justify-between text-xs font-bold"><span class="text-slate-600">Weekly study progress</span><span id="study-progress-label" class="text-forest">3 of 5 sessions</span></div>
+                  <div class="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100"><div id="study-progress-bar" class="h-full w-3/5 rounded-full bg-leaf transition-all"></div></div>
+                  <p class="mt-2 text-xs text-slate-500">Your reading progress stays ready for your next session.</p>
+                </div>
+              </div>
+              <article class="min-h-[420px] rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-9">
+                <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-5">
+                  <div><p id="reader-kind" class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Verified notes · Biology</p><h3 id="reader-title" class="mt-2 text-2xl font-extrabold tracking-tight text-ink">Cell structure &amp; organisation</h3></div>
+                  <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-mint text-forest" aria-label="Saved for offline reading">✓</span>
+                </div>
+                <div class="py-6">
+                  <div class="mb-6 rounded-2xl bg-[#F2FBF5] p-5">
+                    <p class="text-xs font-extrabold uppercase tracking-[0.14em] text-leaf">Today’s focus</p>
+                    <p id="reader-content" class="mt-2 leading-7 text-slate-700">Explore how cells form the building blocks of life. Review the key differences between plant and animal cells, then test yourself by labelling each structure.</p>
+                  </div>
+                  <h4 class="font-extrabold text-ink">A quick study plan</h4>
+                  <ol class="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+                    <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-mint text-xs font-extrabold text-forest">1</span>Read the main idea and highlight unfamiliar terms.</li>
+                    <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-mint text-xs font-extrabold text-forest">2</span>Explain the topic in your own words.</li>
+                    <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-mint text-xs font-extrabold text-forest">3</span>Try a practice question to check your understanding.</li>
+                  </ol>
+                  <button id="complete-study-session" type="button" class="mt-7 w-full rounded-full bg-forest px-5 py-4 text-sm font-extrabold text-white transition hover:bg-leaf">Mark session complete</button>
+                </div>
+              </article>
+            </section>
+
+            <section id="teacher-dashboard-panel" role="tabpanel" aria-labelledby="teacher-view-tab" data-experience-panel="teacher" class="hidden">
+              <div class="rounded-[2rem] border border-slate-200 bg-[#F7FAF8] p-5 shadow-soft sm:p-8">
+                <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                  <div><p class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Educator workspace</p><h3 class="mt-1 text-2xl font-extrabold tracking-tight text-ink">Welcome, <span id="teacher-greeting">Teacher</span></h3><p class="mt-1 text-sm text-slate-500">Your materials, student reach and earnings preview.</p></div>
+                  <button type="button" data-open-upload class="inline-flex items-center justify-center gap-2 rounded-full bg-forest px-5 py-3.5 text-sm font-extrabold text-white transition hover:bg-leaf"><span aria-hidden="true">＋</span> Upload document</button>
+                </div>
+                <div class="mt-6 grid gap-3 sm:grid-cols-3">
+                  <div class="rounded-2xl border border-slate-100 bg-white p-5"><p class="text-xs font-bold text-slate-500">Materials published</p><p id="teacher-material-total" class="mt-2 text-2xl font-extrabold text-ink">4</p><p class="mt-1 text-xs font-semibold text-forest">Ready for students</p></div>
+                  <div class="rounded-2xl border border-slate-100 bg-white p-5"><p class="text-xs font-bold text-slate-500">Student reads</p><p class="mt-2 text-2xl font-extrabold text-ink">248</p><p class="mt-1 text-xs font-semibold text-forest">↑ 18% this month</p></div>
+                  <div class="rounded-2xl border border-slate-100 bg-white p-5"><p class="text-xs font-bold text-slate-500">Earnings preview</p><p class="mt-2 text-2xl font-extrabold text-ink">TZS 84,500</p><p class="mt-1 text-xs font-semibold text-slate-500">Based on verified engagement</p></div>
+                </div>
+                <div class="mt-6 rounded-2xl border border-slate-100 bg-white p-5">
+                  <div class="flex items-center justify-between"><div><h4 class="font-extrabold text-ink">Your materials</h4><p class="mt-1 text-xs text-slate-500">Recent uploads and their review status</p></div><span class="rounded-full bg-mint px-3 py-1.5 text-xs font-extrabold text-forest">Demo dashboard</span></div>
+                  <ul id="teacher-material-list" class="mt-4 divide-y divide-slate-100">
+                    <li class="flex items-center gap-3 py-3"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-forest">PDF</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-extrabold text-ink">Introduction to Ecology</span><span class="text-xs text-slate-500">Biology · Form 4 · 96 reads</span></span><span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-forest">Published</span></li>
+                    <li class="flex items-center gap-3 py-3"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-forest">PDF</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-extrabold text-ink">Algebra revision pack</span><span class="text-xs text-slate-500">Mathematics · Form 2 · 72 reads</span></span><span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-forest">Published</span></li>
+                  </ul>
+                </div>
+                <p class="mt-4 text-xs leading-5 text-slate-500">This is a frontend preview only. Uploads and earnings are simulated and aren’t sent to a server.</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
       <section id="register" class="px-5 pb-20 sm:px-8 sm:pb-28 lg:px-10">
         <div class="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-forest px-6 py-12 text-white sm:px-10 sm:py-16 lg:px-16">
           <div aria-hidden="true" class="absolute -right-20 -top-36 h-96 w-96 rounded-full border-[52px] border-white/[0.04]"></div>
@@ -424,7 +774,8 @@
             </div>
             <div class="mt-9 grid gap-4 md:grid-cols-2">
               <a
-                href="mailto:maarifayetutanzania@gmail.com?subject=Student%20registration"
+                href="#register"
+                data-register-role="student"
                 class="group flex items-center justify-between gap-4 rounded-2xl bg-white p-5 text-left text-ink transition hover:-translate-y-1 hover:shadow-xl sm:p-6"
               >
                 <span>
@@ -435,8 +786,8 @@
                 <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-mint text-forest transition group-hover:bg-forest group-hover:text-white" aria-hidden="true">→</span>
               </a>
               <a
-                href="#upload-modal"
-                data-open-upload
+                href="#register"
+                data-register-role="teacher"
                 class="group flex items-center justify-between gap-4 rounded-2xl border border-white/20 bg-white/10 p-5 text-left text-white backdrop-blur transition hover:-translate-y-1 hover:bg-white/15 sm:p-6"
               >
                 <span>
@@ -506,6 +857,101 @@
         </div>
       </div>
     </footer>
+
+    <div
+      id="registration-modal"
+      class="registration-backdrop fixed inset-0 z-[60] hidden items-center justify-center overflow-y-auto bg-slate-900/60 p-3 opacity-0 backdrop-blur-sm transition-opacity duration-200 sm:p-6"
+      aria-hidden="true"
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="registration-title"
+        tabindex="-1"
+        class="registration-card my-auto w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-2xl transition-transform duration-200"
+      >
+        <header class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-7">
+          <a href="#" class="flex items-center gap-2.5 text-lg font-extrabold tracking-tight text-forest" aria-label="Maarifa">
+            <span class="grid h-9 w-9 place-items-center rounded-xl bg-forest text-white">M</span>maarifa
+          </a>
+          <button type="button" data-close-registration aria-label="Close registration" class="grid h-10 w-10 place-items-center rounded-full text-2xl text-slate-500 transition hover:bg-slate-100 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-forest">×</button>
+        </header>
+        <div class="max-h-[calc(100vh-7rem)] overflow-y-auto px-5 py-6 sm:px-7 sm:py-7">
+          <div id="registration-choice">
+            <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Start your journey</p>
+            <h2 id="registration-title" class="mt-2 text-2xl font-extrabold tracking-tight text-ink">How will you use Maarifa?</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Choose your learning space to create a demo account.</p>
+            <div class="mt-6 grid gap-3 sm:grid-cols-2">
+              <button type="button" data-select-role="student" class="rounded-2xl border border-emerald-100 bg-[#F2FBF5] p-5 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
+                <span class="grid h-11 w-11 place-items-center rounded-2xl bg-white text-xl">📚</span><span class="mt-4 block font-extrabold text-ink">I’m a student</span><span class="mt-1 block text-xs leading-5 text-slate-500">Find notes, past papers and study guides.</span>
+              </button>
+              <button type="button" data-select-role="teacher" class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
+                <span class="grid h-11 w-11 place-items-center rounded-2xl bg-white text-xl">✏️</span><span class="mt-4 block font-extrabold text-ink">I’m an educator</span><span class="mt-1 block text-xs leading-5 text-slate-500">Share learning materials and track engagement.</span>
+              </button>
+            </div>
+          </div>
+
+          <form id="student-registration-form" class="hidden space-y-4" novalidate>
+            <button type="button" data-registration-back class="mb-1 text-sm font-bold text-forest transition hover:text-leaf">← Choose account type</button>
+            <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Student registration</p>
+            <h2 id="student-registration-heading" class="text-2xl font-extrabold tracking-tight text-ink">Let’s get you learning.</h2>
+            <div>
+              <label for="student-name" class="mb-1.5 block text-sm font-bold text-slate-700">Full name</label>
+              <input id="student-name" name="name" type="text" autocomplete="name" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="Your full name" />
+            </div>
+            <div>
+              <label for="student-contact" class="mb-1.5 block text-sm font-bold text-slate-700">Email or phone</label>
+              <input id="student-contact" name="contact" type="text" autocomplete="email" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="you@example.com or +255..." />
+            </div>
+            <div>
+              <label for="student-school" class="mb-1.5 block text-sm font-bold text-slate-700">School</label>
+              <input id="student-school" name="school" type="text" autocomplete="organization" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="Your school name" />
+            </div>
+            <div>
+              <label for="student-level" class="mb-1.5 block text-sm font-bold text-slate-700">Form level</label>
+              <select id="student-level" name="level" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold outline-none transition focus:border-emerald-300 focus:ring-4 focus:ring-emerald-50">
+                <option value="">Choose your Form</option><option value="1">Form 1</option><option value="2">Form 2</option><option value="3">Form 3</option><option value="4">Form 4</option><option value="5">Form 5</option><option value="6">Form 6</option>
+              </select>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div><label for="student-password" class="mb-1.5 block text-sm font-bold text-slate-700">Password</label><input id="student-password" name="password" type="password" autocomplete="new-password" minlength="8" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="At least 8 characters" /></div>
+              <div><label for="student-confirm-password" class="mb-1.5 block text-sm font-bold text-slate-700">Confirm password</label><input id="student-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="Repeat password" /></div>
+            </div>
+            <p id="student-registration-error" role="alert" class="hidden rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"></p>
+            <button type="submit" class="w-full rounded-full bg-forest px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-forest/15 transition hover:bg-leaf">Create student account <span aria-hidden="true">→</span></button>
+          </form>
+
+          <form id="teacher-registration-form" class="hidden space-y-4" novalidate>
+            <button type="button" data-registration-back class="mb-1 text-sm font-bold text-forest transition hover:text-leaf">← Choose account type</button>
+            <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Educator registration</p>
+            <h2 id="teacher-registration-heading" class="text-2xl font-extrabold tracking-tight text-ink">Share what you know.</h2>
+            <div>
+              <label for="teacher-name" class="mb-1.5 block text-sm font-bold text-slate-700">Full name</label>
+              <input id="teacher-name" name="name" type="text" autocomplete="name" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="Your full name" />
+            </div>
+            <div>
+              <label for="teacher-contact" class="mb-1.5 block text-sm font-bold text-slate-700">Email or phone</label>
+              <input id="teacher-contact" name="contact" type="text" autocomplete="email" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="you@example.com or +255..." />
+            </div>
+            <div>
+              <label for="teacher-subjects" class="mb-1.5 block text-sm font-bold text-slate-700">Subjects taught</label>
+              <input id="teacher-subjects" name="subjects" type="text" autocomplete="off" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="e.g. Biology, Chemistry" />
+            </div>
+            <div>
+              <label for="teacher-experience" class="mb-1.5 block text-sm font-bold text-slate-700">Years of experience</label>
+              <input id="teacher-experience" name="experience" type="number" min="0" max="60" step="1" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="e.g. 5" />
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div><label for="teacher-password" class="mb-1.5 block text-sm font-bold text-slate-700">Password</label><input id="teacher-password" name="password" type="password" autocomplete="new-password" minlength="8" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="At least 8 characters" /></div>
+              <div><label for="teacher-confirm-password" class="mb-1.5 block text-sm font-bold text-slate-700">Confirm password</label><input id="teacher-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="Repeat password" /></div>
+            </div>
+            <p id="teacher-registration-error" role="alert" class="hidden rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"></p>
+            <button type="submit" class="w-full rounded-full bg-forest px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-forest/15 transition hover:bg-leaf">Create educator account <span aria-hidden="true">→</span></button>
+          </form>
+          <p class="mt-5 text-center text-xs leading-5 text-slate-400">Demo registration only. Your information stays in this browser and is not sent to a server.</p>
+        </div>
+      </section>
+    </div>
 
     <div
       id="terms-modal"
@@ -666,6 +1112,7 @@
                 name="title"
                 type="text"
                 autocomplete="off"
+                required
                 placeholder="Enter material title"
                 class="w-full rounded-2xl border border-transparent bg-slate-100 px-4 py-3.5 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50"
               />
@@ -677,6 +1124,7 @@
                 name="description"
                 type="text"
                 autocomplete="off"
+                required
                 placeholder="Briefly describe your material"
                 class="w-full rounded-2xl border border-transparent bg-slate-100 px-4 py-3.5 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50"
               />
@@ -688,6 +1136,7 @@
                 name="subject"
                 type="text"
                 autocomplete="off"
+                required
                 placeholder="e.g. Physics"
                 class="w-full rounded-2xl border border-transparent bg-slate-100 px-4 py-3.5 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50"
               />
@@ -699,6 +1148,7 @@
                 name="topic"
                 type="text"
                 autocomplete="off"
+                required
                 placeholder="e.g. Thermodynamics"
                 class="w-full rounded-2xl border border-transparent bg-slate-100 px-4 py-3.5 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50"
               />
@@ -746,7 +1196,7 @@
             <button
               type="submit"
               class="w-full rounded-full bg-forest px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-forest/15 transition hover:bg-leaf focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2"
-            >Submit for review</button>
+            >Publish material</button>
           </form>
         </div>
 
@@ -947,7 +1397,20 @@
           event.preventDefault();
           error.classList.add("hidden");
           error.textContent = "";
-          notice.textContent = "To submit materials for real-time moderation and track live student engagement scores, please download the full Maarifa Android app. Contact maarifayetutanzania@gmail.com for access.";
+          if (!fileInput.files?.length) {
+            error.textContent = "Choose a PDF file before publishing this material.";
+            error.classList.remove("hidden");
+            choosePdf.focus();
+            return;
+          }
+          if (!form.reportValidity()) return;
+          const material = {
+            title: document.getElementById("material-title").value.trim(),
+            subject: document.getElementById("material-subject").value.trim(),
+            form: document.getElementById("material-form").value,
+          };
+          window.dispatchEvent(new CustomEvent("maarifa:material-published", { detail: material }));
+          notice.textContent = `"${material.title}" was added to your demo dashboard and queued for review. This frontend preview does not send or store files on a server.`;
           notice.classList.remove("hidden");
           notice.focus();
         });
