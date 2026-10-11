@@ -12,30 +12,31 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isVerifiedTeacher(teacherId) {
+      return exists(/databases/$(database)/documents/teachers/$(teacherId)) &&
+        get(/databases/$(database)/documents/teachers/$(teacherId)).data.verificationStatus in ['VERIFIED', 'APPROVED'];
+    }
+
     // Checking Admin without crashing if user doc missing
     function isAdmin() {
       return isSignedIn() && (
-        request.auth.token.admin == true ||
+        request.auth.token.get('admin', false) == true ||
         (
           exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
           (
-            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN' ||
-            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'ADMIN' ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true
           )
         )
       );
     }
 
-    // ---------------- WILDCARD OVERRIDE (FOR ADMIN DASHBOARD & SUBCOLLECTIONS) ----------------
-    // Hii inahakikisha collectionGroup queries na subcollections zote zinasomwa na kuandikwa bila kukwama
-    match /{path=**} {
-      allow read, write: if isSignedIn();
-    }
-
     // ---------------- users ----------------
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isOwner(userId);
+      allow read: if isAdmin() || isOwner(userId);
+      allow create: if isOwner(userId)
+                    && request.resource.data.role in ['STUDENT', 'TEACHER']
+                    && request.resource.data.status == 'ACTIVE';
       allow update: if isAdmin() || (
         isOwner(userId) &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isAdmin', 'status']))
@@ -44,65 +45,120 @@ service cloud.firestore {
     }
 
     // ---------------- teachers ----------------
-    // Mwalimu yeyote anaweza kutengeneza au kurekebisha profile yake
     match /teachers/{teacherId} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn() && (request.auth.uid == teacherId || isAdmin());
+      allow read: if isAdmin() || isOwner(teacherId);
+      allow create: if isOwner(teacherId)
+                    && request.resource.data.userId == teacherId
+                    && request.resource.data.verificationStatus == 'PENDING'
+                    && request.resource.data.totalUploads == 0
+                    && request.resource.data.totalReaders == 0
+                    && request.resource.data.engagementScore == 0
+                    && request.resource.data.earningsBalanceTzs == 0
+                    && request.resource.data.keys().hasOnly([
+                      'teacherId', 'userId', 'fullName', 'email', 'phoneNumber',
+                      'subjectsTaught', 'experienceYears', 'verificationStatus',
+                      'verificationNotes', 'verificationNotice', 'totalUploads',
+                      'totalReaders', 'engagementScore', 'earningsBalanceTzs',
+                      'createdAt', 'updatedAt'
+                    ]);
+      allow update: if isAdmin() || (
+        isOwner(teacherId)
+        && request.resource.data.teacherId == teacherId
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['teacherId', 'paymentMethod', 'provider', 'accountNumber', 'paymentProvider', 'paymentAccountNumber', 'bio', 'subjectsTaught', 'updatedAt'])
+      );
       allow delete: if isAdmin();
     }
 
     // ---------------- materials ----------------
-    // Imerekebishwa: Mwalimu anaweza kupakia (create) na kubadilisha material yake bila kuzuiwa na status
     match /materials/{materialId} {
-      allow read: if isSignedIn();
-      
-      // Anaruhusiwa kupakia kama ame-sign in na yeye ndiye aliyeiweka (authorId au userId)
-      allow create: if isSignedIn() && (
-        request.resource.data.userId == request.auth.uid || 
-        request.resource.data.authorId == request.auth.uid
-      );
-      
-      // Anaruhusiwa kuedit kama ni ya kwake au kama ni Admin
+      allow read: if isAdmin() || (isSignedIn() && (
+        resource.data.status == 'APPROVED' ||
+        resource.data.teacherId == request.auth.uid
+      ));
+      allow create: if isSignedIn()
+                    && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'TEACHER'
+                    && isVerifiedTeacher(request.auth.uid)
+                    && request.resource.data.teacherId == request.auth.uid
+                    && request.resource.data.status == 'PENDING_REVIEW'
+                    && request.resource.data.fileType == 'PDF';
       allow update: if isAdmin() || (
-        isSignedIn() && (
-          resource.data.userId == request.auth.uid || 
-          resource.data.authorId == request.auth.uid
-        )
+        isSignedIn()
+        && resource.data.status == 'APPROVED'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['saveCount'])
+        && request.resource.data.saveCount == resource.data.get('saveCount', 0) + 1
       );
-      
-      allow delete: if isAdmin() || (
-        isSignedIn() && (
-          resource.data.userId == request.auth.uid || 
-          resource.data.authorId == request.auth.uid
-        )
-      );
+      allow delete: if isAdmin();
     }
 
     // ---------------- subscriptions ----------------
     match /subscriptions/{subscriptionId} {
-      allow read: if isSignedIn();
-      allow write: if false; // Cloud Functions / Payment Webhook pekee
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow write: if false;
     }
 
     // ---------------- payouts ----------------
     match /payouts/{payoutId} {
-      allow read: if isSignedIn();
-      allow write: if false; // Cloud Functions pekee
+      allow read: if isAdmin() || (isSignedIn() && resource.data.teacherId == request.auth.uid);
+      allow write: if false;
     }
 
     // ---------------- downloads ----------------
     match /downloads/{downloadId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && downloadId == request.auth.uid + '_' + request.resource.data.materialId
+                    && get(/databases/$(database)/documents/materials/$(request.resource.data.materialId)).data.status == 'APPROVED';
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly(['localStatus', 'localFileName', 'bytesTotal', 'bytesDownloaded', 'lastOpenedAt']);
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ---------------- engagement ----------------
+    match /engagement/{engagementId} {
+      allow get: if isAdmin() || (isSignedIn() && engagementId.matches('^' + request.auth.uid + '_.*$'));
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && engagementId == request.auth.uid + '_' + request.resource.data.materialId
+                    && request.resource.data.readCount == 1
+                    && request.resource.data.materialId is string
+                    && request.resource.data.progressPercent == 0
+                    && request.resource.data.readingTimeSeconds == 0
+                    && get(/databases/$(database)/documents/materials/$(request.resource.data.materialId)).data.status == 'APPROVED'
+                    && request.resource.data.teacherId == get(/databases/$(database)/documents/materials/$(request.resource.data.materialId)).data.teacherId;
+      allow update: if isSignedIn()
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == resource.data.userId
+                    && request.resource.data.materialId == resource.data.materialId
+                    && request.resource.data.teacherId == resource.data.teacherId
+                    && (
+                      (
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readCount', 'lastAccessedAt'])
+                        && request.resource.data.readCount == resource.data.readCount + 1
+                      ) ||
+                      (
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progressPercent', 'readingTimeSeconds'])
+                        && request.resource.data.progressPercent is int
+                        && request.resource.data.progressPercent >= 0
+                        && request.resource.data.progressPercent <= 100
+                        && request.resource.data.readingTimeSeconds >= resource.data.readingTimeSeconds
+                        && request.resource.data.readingTimeSeconds <= resource.data.readingTimeSeconds + 3600
+                      )
+                    );
+      allow delete: if false;
     }
 
     // ---------------- notifications ----------------
     match /notifications/{notificationId} {
-      allow read: if isSignedIn();
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid
+                    && request.resource.data.read is bool
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
-      allow create, delete: if false;
+      allow create, delete: if isAdmin();
     }
   }
 }

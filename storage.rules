@@ -1,0 +1,16 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /materials/{teacherId}/{allPaths=**} {
+      allow get: if request.auth != null && request.auth.uid == teacherId;
+      allow list: if false;
+      allow create: if request.auth != null
+                    && request.auth.uid == teacherId
+                    && request.resource.size < 20 * 1024 * 1024
+                    && request.resource.contentType == 'application/pdf';
+      allow update: if false;
+      allow delete: if request.auth != null && request.auth.uid == teacherId;
+    }
+  }
+}

@@ -16,12 +16,29 @@
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
     <script>
       (() => {
         document.addEventListener("DOMContentLoaded", () => {
+        const firebaseConfig = {
+          apiKey: "AIzaSyCcNlowv61JgW0Bda9kkdFtLlWA8QZSIIw",
+          authDomain: "maarifaapp-aa585.firebaseapp.com",
+          projectId: "maarifaapp-aa585",
+          storageBucket: "maarifaapp-aa585.firebasestorage.app",
+          messagingSenderId: "106555594589",
+          appId: "1:106555594589:web:10e80c6816d4f359ad3ab4",
+        };
+        const firebaseApp = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+        const auth = firebaseApp.auth();
+        const db = firebaseApp.firestore();
+        const storage = firebaseApp.storage();
         const modal = document.getElementById("registration-modal");
         const card = modal.querySelector(".registration-card");
         const choice = document.getElementById("registration-choice");
+        const loginForm = document.getElementById("login-form");
         const forms = {
           student: document.getElementById("student-registration-form"),
           teacher: document.getElementById("teacher-registration-form"),
@@ -29,11 +46,15 @@
         let active = false;
         let previousFocus = null;
         let closeTimer;
-        let sessionsCompleted = 3;
-        let teacherMaterialTotal = 4;
+        let activeUser = null;
+        let activeProfile = null;
+        let approvedMaterials = [];
+        let phoneConfirmations = {};
+        let recaptchaVerifiers = {};
 
         function selectRole(role) {
           choice.classList.add("hidden");
+          loginForm.classList.add("hidden");
           for (const [formRole, form] of Object.entries(forms)) {
             form.classList.toggle("hidden", formRole !== role);
           }
@@ -55,12 +76,33 @@
             selectRole(role);
           } else {
             choice.classList.remove("hidden");
+            loginForm.classList.add("hidden");
             Object.values(forms).forEach((form) => form.classList.add("hidden"));
             modal.querySelector('[role="dialog"]').setAttribute("aria-labelledby", "registration-title");
             modal.querySelector("[data-close-registration]").focus();
           }
+
           requestAnimationFrame(() => modal.classList.remove("opacity-0"));
         }
+
+        function openLogin(event) {
+          event.preventDefault();
+          window.clearTimeout(closeTimer);
+          previousFocus = event.currentTarget;
+          active = true;
+          modal.classList.remove("hidden");
+          modal.setAttribute("aria-hidden", "false");
+          document.body.classList.add("overflow-hidden");
+          choice.classList.add("hidden");
+          Object.values(forms).forEach((form) => form.classList.add("hidden"));
+          loginForm.classList.remove("hidden");
+          modal.querySelector('[role="dialog"]').setAttribute("aria-labelledby", "login-heading");
+          requestAnimationFrame(() => {
+            modal.classList.remove("opacity-0");
+            document.getElementById("login-email").focus();
+          });
+        }
+        window.maarifaOpenLogin = openLogin;
 
         function closeRegistration() {
           if (!active) return;
@@ -76,12 +118,22 @@
         document.querySelectorAll("[data-open-registration], [data-register-role]").forEach((trigger) => {
           trigger.addEventListener("click", openRegistration);
         });
+        document.querySelectorAll("[data-open-login], [data-show-login]").forEach((trigger) => {
+          trigger.addEventListener("click", openLogin);
+        });
+        document.querySelector("[data-login-back]").addEventListener("click", () => {
+          loginForm.classList.add("hidden");
+          choice.classList.remove("hidden");
+          modal.querySelector('[role="dialog"]').setAttribute("aria-labelledby", "registration-title");
+          modal.querySelector("[data-select-role]").focus();
+        });
         document.querySelectorAll("[data-select-role]").forEach((button) => {
           button.addEventListener("click", () => selectRole(button.dataset.selectRole));
         });
         document.querySelectorAll("[data-registration-back]").forEach((button) => {
           button.addEventListener("click", () => {
             Object.values(forms).forEach((form) => form.classList.add("hidden"));
+            loginForm.classList.add("hidden");
             choice.classList.remove("hidden");
             modal.querySelector('[role="dialog"]').setAttribute("aria-labelledby", "registration-title");
             modal.querySelector("[data-select-role]").focus();
@@ -106,6 +158,25 @@
             first.focus();
           }
         });
+        document.querySelector("[data-reset-password]").addEventListener("click", async () => {
+          const email = document.getElementById("login-email").value.trim();
+          const error = document.getElementById("login-error");
+          clearAuthError(error);
+          if (!email) {
+            error.textContent = "Enter your email address first to receive a password reset link.";
+            error.classList.remove("hidden");
+            document.getElementById("login-email").focus();
+            return;
+          }
+          try {
+            await auth.sendPasswordResetEmail(email);
+            error.textContent = "Password reset email sent. Check your inbox.";
+            error.classList.remove("bg-red-50", "text-red-700");
+            error.classList.add("bg-emerald-50", "text-forest");
+          } catch (firebaseError) {
+            showAuthError(error, firebaseError);
+          }
+        });
 
         const experience = document.getElementById("app-experience");
         const tabs = [...document.querySelectorAll("[data-experience-tab]")];
@@ -113,6 +184,10 @@
         let activeExperience = "student";
 
         function setExperience(role) {
+          if (activeProfile && activeProfile.role !== role.toUpperCase()) {
+            document.getElementById("app-account-status").textContent = `This account is registered as a ${activeProfile.role.toLowerCase()}. Sign out to switch account type.`;
+            return;
+          }
           activeExperience = role;
           tabs.forEach((tab) => {
             const selected = tab.dataset.experienceTab === role;
@@ -129,16 +204,323 @@
           });
         }
 
-        function showExperience(role, name) {
+        function displayExperience(role, profile) {
+          activeProfile = profile;
+          window.maarifaProfile = profile;
           setExperience(role);
-          const firstName = name.trim().split(/\s+/)[0] || (role === "teacher" ? "Teacher" : "Learner");
+          const accountStatus = document.getElementById("app-account-status");
+          accountStatus.textContent = `Signed in as ${profile.fullName || "Maarifa user"} · ${role === "teacher" ? "Educator" : "Student"}${profile.verificationEmailError ? ` · Email verification could not be sent: ${profile.verificationEmailError}` : ""}`;
+          accountStatus.dataset.activeRole = role;
+          document.querySelectorAll("[data-open-login]").forEach((button) => button.classList.add("hidden"));
+          document.querySelectorAll("[data-sign-out]").forEach((button) => button.classList.remove("hidden"));
+          const firstName = (profile.fullName || "").trim().split(/\s+/)[0] || (role === "teacher" ? "Teacher" : "Learner");
           document.getElementById(role === "teacher" ? "teacher-greeting" : "student-greeting").textContent = firstName;
           experience.classList.remove("hidden");
           experience.setAttribute("aria-hidden", "false");
-          if (role === "student") applyStudentFilters();
+          if (role === "student") {
+            const formNumber = String(profile.formClass || "").match(/[1-6]/)?.[0] || "all";
+            document.getElementById("student-form-filter").value = formNumber;
+            loadStudentMaterials();
+            loadStudentProgress();
+          } else {
+            loadTeacherDashboard();
+          }
           closeRegistration();
           window.setTimeout(() => experience.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
         }
+
+        async function loadSignedInProfile(user) {
+          activeUser = user;
+          try {
+            const snapshot = await db.collection("users").doc(user.uid).get();
+            if (!snapshot.exists) {
+              const message = "Your account exists, but its Maarifa profile is missing. Contact support to restore it.";
+              document.getElementById("login-error").textContent = message;
+              document.getElementById("login-error").classList.remove("hidden");
+              document.getElementById("app-account-status").textContent = message;
+              return;
+            }
+            const profile = snapshot.data();
+            if (!["STUDENT", "TEACHER"].includes(profile.role)) throw new Error("This account does not have a student or educator profile.");
+            displayExperience(profile.role.toLowerCase(), profile);
+          } catch (error) {
+            showAuthError(document.getElementById("login-error"), error);
+          }
+        }
+
+        function showAuthError(element, error) {
+          element.classList.remove("bg-emerald-50", "text-forest");
+          element.classList.add("bg-red-50", "text-red-700");
+          element.textContent = error?.message || "Something went wrong. Please try again.";
+          element.classList.remove("hidden");
+        }
+
+        function clearAuthError(element) {
+          element.textContent = "";
+          element.classList.add("hidden");
+          element.classList.remove("bg-emerald-50", "text-forest");
+          element.classList.add("bg-red-50", "text-red-700");
+        }
+
+        function updateMethodFields(prefix, method) {
+          const emailMode = method === "email";
+          document.getElementById(`${prefix}-email-group`).classList.toggle("hidden", !emailMode);
+          document.getElementById(`${prefix}-phone-group`).classList.toggle("hidden", emailMode);
+          if (prefix !== "login") {
+            document.getElementById(`${prefix}-password-fields`).classList.toggle("hidden", !emailMode);
+            const form = forms[prefix];
+            form.querySelectorAll('[name="password"], [name="confirmPassword"]').forEach((input) => { input.required = emailMode; });
+          } else {
+            document.getElementById("login-password-group").classList.toggle("hidden", !emailMode);
+            document.getElementById("login-password").required = emailMode;
+          }
+          const phone = document.getElementById(`${prefix}-phone`);
+          const email = document.getElementById(`${prefix}-email`);
+          phone.required = !emailMode;
+          email.required = emailMode;
+          phone.disabled = emailMode;
+          email.disabled = !emailMode;
+          const otp = document.getElementById(`${prefix}-otp`);
+          const hasPhoneConfirmation = Boolean(phoneConfirmations[prefix]);
+          document.getElementById(`${prefix}-otp-fields`).classList.toggle("hidden", !hasPhoneConfirmation);
+          otp.disabled = !hasPhoneConfirmation;
+        }
+
+        async function getPhoneVerifier(prefix) {
+          if (recaptchaVerifiers[prefix]) {
+            recaptchaVerifiers[prefix].clear();
+            delete recaptchaVerifiers[prefix];
+          }
+          const verifier = new firebase.auth.RecaptchaVerifier(`${prefix}-recaptcha`, { size: "invisible" }, auth);
+          recaptchaVerifiers[prefix] = verifier;
+          await verifier.render();
+          return verifier;
+        }
+
+        async function saveNewProfile(role, user, form) {
+          const isStudent = role === "student";
+          const email = document.getElementById(`${role}-email`).value.trim();
+          const phoneNumber = user.phoneNumber || document.getElementById(`${role}-phone`).value.trim();
+          const name = form.querySelector('[name="name"]').value.trim();
+          const profile = {
+            userId: user.uid,
+            fullName: name,
+            phoneNumber,
+            email: email || user.email || "",
+            authProvider: email ? "EMAIL" : "PHONE",
+            role: isStudent ? "STUDENT" : "TEACHER",
+            region: "",
+            schoolName: isStudent ? form.querySelector('[name="school"]').value.trim() : "",
+            formClass: isStudent ? `FORM_${form.querySelector('[name="level"]').value}` : "",
+            status: "ACTIVE",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          };
+          if (user.phoneNumber && (await db.collection("users").doc(user.uid).get()).exists) {
+          await auth.signOut();
+          throw new Error("This phone number already has a Maarifa account. Please sign in instead.");
+          }
+          const batch = db.batch();
+          batch.set(db.collection("users").doc(user.uid), profile);
+          if (!isStudent) {
+            const teacherProfile = {
+              teacherId: user.uid,
+              userId: user.uid,
+              fullName: name,
+              phoneNumber,
+              email: profile.email,
+              subjectsTaught: form.querySelector('[name="subjects"]').value.split(/[,;]/).map((subject) => subject.trim()).filter(Boolean),
+              experienceYears: Number(form.querySelector('[name="experience"]').value),
+              verificationStatus: "PENDING",
+              verificationNotes: "",
+              totalUploads: 0,
+              totalReaders: 0,
+              engagementScore: 0,
+              earningsBalanceTzs: 0,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+            batch.set(db.collection("teachers").doc(user.uid), teacherProfile);
+          }
+          await batch.commit();
+          if (email) {
+            try {
+              await user.sendEmailVerification();
+            } catch (error) {
+              console.error("Account was created, but Firebase could not send the verification email", error);
+              profile.verificationEmailError = error.message || "Please request a new verification email later.";
+            }
+          }
+          return profile;
+        }
+
+        async function beginPhoneVerification(prefix, phoneNumber) {
+          const verifier = await getPhoneVerifier(prefix);
+          phoneConfirmations[prefix] = await auth.signInWithPhoneNumber(phoneNumber, verifier);
+          document.getElementById(`${prefix}-otp-fields`).classList.remove("hidden");
+          document.getElementById(`${prefix}-otp`).required = true;
+          document.getElementById(`${prefix}-otp`).disabled = false;
+          document.querySelector(`#${prefix === "login" ? "login-form" : `${prefix}-registration-form`} button[type="submit"]`).textContent = "Verify SMS code";
+          document.getElementById(`${prefix}-otp`).focus();
+        }
+
+        for (const role of ["student", "teacher"]) {
+          const methodSelect = document.getElementById(`${role}-auth-method`);
+          const phoneInput = document.getElementById(`${role}-phone`);
+          phoneInput.addEventListener("input", () => {
+            if (!phoneConfirmations[role]) return;
+            phoneConfirmations[role] = null;
+            document.getElementById(`${role}-otp`).value = "";
+            document.getElementById(`${role}-otp`).required = false;
+            updateMethodFields(role, methodSelect.value);
+            forms[role].querySelector('button[type="submit"]').textContent = role === "student" ? "Create student account →" : "Create educator account →";
+          });
+          methodSelect.addEventListener("change", () => {
+            phoneConfirmations[role] = null;
+            document.getElementById(`${role}-otp-fields`).classList.add("hidden");
+            document.getElementById(`${role}-otp`).required = false;
+            const button = forms[role].querySelector('button[type="submit"]');
+            button.textContent = role === "student" ? "Create student account →" : "Create educator account →";
+            updateMethodFields(role, methodSelect.value);
+          });
+          forms[role].addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const form = forms[role];
+            const error = document.getElementById(`${role}-registration-error`);
+            clearAuthError(error);
+            const method = methodSelect.value;
+            const password = form.querySelector('[name="password"]');
+            const confirmation = form.querySelector('[name="confirmPassword"]');
+            if (method === "email" && password.value !== confirmation.value) {
+              confirmation.setCustomValidity("Passwords do not match.");
+            } else {
+              confirmation.setCustomValidity("");
+            }
+            const phone = document.getElementById(`${role}-phone`);
+            if (method === "phone" && !phoneConfirmations[role]) {
+              phone.setCustomValidity(/^\+[1-9]\d{7,14}$/.test(phone.value.trim()) ? "" : "Use international format, for example +255712345678.");
+            } else {
+              phone.setCustomValidity("");
+            }
+            if (!form.reportValidity()) return;
+            const button = form.querySelector('button[type="submit"]');
+            button.disabled = true;
+            try {
+              if (method === "phone" && !phoneConfirmations[role]) {
+                await beginPhoneVerification(role, phone.value.trim());
+                return;
+              }
+              let user;
+              if (method === "email") {
+                const credential = await auth.createUserWithEmailAndPassword(document.getElementById(`${role}-email`).value.trim(), password.value);
+                user = credential.user;
+                await user.updateProfile({ displayName: form.querySelector('[name="name"]').value.trim() });
+              } else {
+                const credential = await phoneConfirmations[role].confirm(document.getElementById(`${role}-otp`).value.trim());
+                user = credential.user;
+                await user.updateProfile({ displayName: form.querySelector('[name="name"]').value.trim() });
+              }
+              const profile = await saveNewProfile(role, user, form);
+              activeUser = user;
+              clearAuthError(document.getElementById("login-error"));
+              displayExperience(role, profile);
+            } catch (firebaseError) {
+              showAuthError(error, firebaseError);
+            } finally {
+              button.disabled = false;
+            }
+          });
+          updateMethodFields(role, methodSelect.value);
+        }
+
+        const loginMethod = document.getElementById("login-method");
+        document.getElementById("login-phone").addEventListener("input", () => {
+          if (!phoneConfirmations.login) return;
+          phoneConfirmations.login = null;
+          document.getElementById("login-otp").value = "";
+          document.getElementById("login-otp").required = false;
+          updateMethodFields("login", loginMethod.value);
+          loginForm.querySelector('button[type="submit"]').textContent = "Sign in →";
+        });
+        loginMethod.addEventListener("change", () => {
+          phoneConfirmations.login = null;
+          document.getElementById("login-otp-fields").classList.add("hidden");
+          document.getElementById("login-otp").required = false;
+          document.querySelector('#login-form button[type="submit"]').textContent = "Sign in →";
+          updateMethodFields("login", loginMethod.value);
+        });
+        loginForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const error = document.getElementById("login-error");
+          clearAuthError(error);
+          const method = loginMethod.value;
+          const phone = document.getElementById("login-phone");
+          const button = loginForm.querySelector('button[type="submit"]');
+          if (method === "phone" && !phoneConfirmations.login) {
+            phone.setCustomValidity(/^\+[1-9]\d{7,14}$/.test(phone.value.trim()) ? "" : "Use international format, for example +255712345678.");
+          } else {
+            phone.setCustomValidity("");
+          }
+          if (method === "phone" && phoneConfirmations.login) document.getElementById("login-otp").required = true;
+          if (!loginForm.reportValidity()) return;
+          button.disabled = true;
+          try {
+            if (method === "email") {
+              const result = await auth.signInWithEmailAndPassword(document.getElementById("login-email").value.trim(), document.getElementById("login-password").value);
+              await loadSignedInProfile(result.user);
+            } else if (!phoneConfirmations.login) {
+              await beginPhoneVerification("login", phone.value.trim());
+            } else {
+              const result = await phoneConfirmations.login.confirm(document.getElementById("login-otp").value.trim());
+              await loadSignedInProfile(result.user);
+            }
+          } catch (firebaseError) {
+            showAuthError(error, firebaseError);
+          } finally {
+            button.disabled = false;
+          }
+        });
+        updateMethodFields("login", loginMethod.value);
+
+        let firstAuthState = true;
+        auth.onAuthStateChanged((user) => {
+          if (firstAuthState) {
+            firstAuthState = false;
+            if (user) loadSignedInProfile(user);
+          } else if (!user) {
+            activeUser = null;
+            activeProfile = null;
+            window.maarifaProfile = null;
+            approvedMaterials = [];
+            activeExperience = "student";
+            setExperience("student");
+            document.getElementById("teacher-material-total").textContent = "—";
+            document.getElementById("teacher-reader-total").textContent = "—";
+            document.getElementById("teacher-earnings-total").textContent = "TZS —";
+            document.getElementById("teacher-material-list").innerHTML = '<li class="py-3 text-sm font-semibold text-slate-500">Sign in to view educator materials.</li>';
+            document.getElementById("app-account-status").textContent = "Signed out. Sign in to load your live Maarifa account.";
+            delete document.getElementById("app-account-status").dataset.activeRole;
+            document.querySelectorAll("[data-open-login]").forEach((button) => button.classList.remove("hidden"));
+            document.querySelectorAll("[data-sign-out]").forEach((button) => button.classList.add("hidden"));
+            document.getElementById("student-material-list").replaceChildren(document.getElementById("student-empty-state"));
+            document.getElementById("student-empty-state").textContent = "Sign in to browse verified learning materials.";
+            document.getElementById("material-count").textContent = "0 resources";
+            document.getElementById("study-progress-label").textContent = "0 materials read";
+            document.getElementById("study-progress-bar").style.width = "0%";
+          }
+        });
+        document.querySelectorAll("[data-sign-out]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            try {
+              await auth.signOut();
+              activeProfile = null;
+              window.maarifaProfile = null;
+              activeExperience = "student";
+              experience.scrollIntoView({ behavior: "smooth", block: "start" });
+              setExperience("student");
+            } catch (error) {
+              document.getElementById("app-account-status").textContent = `Could not sign out: ${error.message || "Please try again."}`;
+            }
+          });
+        });
 
         tabs.forEach((tab) => tab.addEventListener("click", () => setExperience(tab.dataset.experienceTab)));
         document.querySelectorAll("[data-preview-app]").forEach((trigger) => {
@@ -150,37 +532,6 @@
             experience.scrollIntoView({ behavior: "smooth", block: "start" });
           });
         });
-
-        for (const [role, form] of Object.entries(forms)) {
-          const password = form.querySelector('input[name="password"]');
-          const confirmation = form.querySelector('input[name="confirmPassword"]');
-          const contact = form.querySelector('input[name="contact"]');
-          const error = document.getElementById(`${role}-registration-error`);
-          [password, confirmation, contact].forEach((input) => {
-            input.addEventListener("input", () => {
-              input.setCustomValidity("");
-              if (input === password) confirmation.setCustomValidity("");
-              error.classList.add("hidden");
-              error.textContent = "";
-            });
-          });
-          form.addEventListener("submit", (event) => {
-            event.preventDefault();
-            error.classList.add("hidden");
-            error.textContent = "";
-            const contactValue = contact.value.trim();
-            const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactValue);
-            const validPhone = /^\+?[\d\s()-]{7,}$/.test(contactValue) && /\d{7,}/.test(contactValue.replace(/\D/g, ""));
-            contact.setCustomValidity(validEmail || validPhone ? "" : "Enter a valid email address or phone number.");
-            confirmation.setCustomValidity(password.value === confirmation.value ? "" : "Passwords do not match.");
-            if (!form.reportValidity()) {
-              error.textContent = confirmation.validationMessage || contact.validationMessage || "Please check the highlighted fields and try again.";
-              error.classList.remove("hidden");
-              return;
-            }
-            showExperience(role, form.querySelector('[name="name"]').value);
-          });
-        }
 
         function applyStudentFilters() {
           const selectedForm = document.getElementById("student-form-filter").value;
@@ -194,50 +545,175 @@
             if (matches) visible += 1;
           });
           document.getElementById("material-count").textContent = `${visible} ${visible === 1 ? "resource" : "resources"}`;
-          document.getElementById("student-empty-state").classList.toggle("hidden", visible > 0);
+          const emptyState = document.getElementById("student-empty-state");
+          emptyState.classList.toggle("hidden", visible > 0);
+          if (!visible) emptyState.textContent = activeUser ? "No approved materials match those filters yet." : "Sign in to browse verified learning materials.";
         }
+
+        async function loadStudentMaterials() {
+          const list = document.getElementById("student-material-list");
+          const emptyState = document.getElementById("student-empty-state");
+          list.replaceChildren(emptyState);
+          emptyState.textContent = "Loading verified materials…";
+          try {
+            const snapshot = await db.collection("materials")
+              .where("status", "==", "APPROVED")
+              .orderBy("createdAt", "desc")
+              .limit(100)
+              .get();
+            approvedMaterials = snapshot.docs.map((document) => ({ id: document.id, ...document.data() }));
+            for (const material of approvedMaterials) {
+              const formNumber = String(material.form || "").match(/[1-6]/)?.[0] || "";
+              const button = document.createElement("button");
+              button.type = "button";
+              button.dataset.studentMaterial = "";
+              button.dataset.materialId = material.id;
+              button.dataset.title = material.title || "Untitled material";
+              button.dataset.subject = (material.subject || "").toLowerCase();
+              button.dataset.form = formNumber;
+              button.dataset.kind = material.topic || "Study material";
+              button.dataset.content = material.description || "Open this verified learning material to read the document.";
+              button.dataset.fileUrl = material.fileUrl || "";
+              button.className = "flex w-full items-center gap-3 rounded-2xl border border-emerald-100 bg-white p-3 text-left transition hover:border-emerald-300 hover:shadow-sm";
+              const icon = document.createElement("span");
+              icon.className = "grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-mint text-xs font-extrabold text-forest";
+              icon.textContent = "PDF";
+              const text = document.createElement("span");
+              text.className = "min-w-0 flex-1";
+              const title = document.createElement("span");
+              title.className = "block truncate text-sm font-extrabold text-ink";
+              title.textContent = button.dataset.title;
+              const metadata = document.createElement("span");
+              metadata.className = "mt-1 block truncate text-xs font-semibold text-slate-500";
+              metadata.textContent = `${material.subject || "Subject"} · Form ${formNumber || "—"} · ${material.teacherName || "Maarifa educator"}`;
+              text.append(title, metadata);
+              const arrow = document.createElement("span");
+              arrow.className = "text-lg text-forest";
+              arrow.setAttribute("aria-hidden", "true");
+              arrow.textContent = "→";
+              button.append(icon, text, arrow);
+              list.insertBefore(button, emptyState);
+            }
+            applyStudentFilters();
+          } catch (error) {
+            emptyState.textContent = `Could not load the live library: ${error.message || "Please try again."}`;
+            emptyState.classList.remove("hidden");
+          }
+        }
+
+        async function loadStudentProgress() {
+          try {
+            const snapshot = await db.collection("engagement").where("userId", "==", activeUser.uid).get();
+            const total = snapshot.size;
+            document.getElementById("study-progress-label").textContent = `${total} ${total === 1 ? "material" : "materials"} read`;
+            document.getElementById("study-progress-bar").style.width = `${Math.min(total, 5) * 20}%`;
+          } catch (error) {
+            document.getElementById("study-progress-label").textContent = "Progress unavailable";
+            console.error("Could not load learning progress", error);
+          }
+        }
+
+        async function recordMaterialRead(material) {
+          if (!activeUser || !material.id) return;
+          const engagementRef = db.collection("engagement").doc(`${activeUser.uid}_${material.id}`);
+          try {
+            await db.runTransaction(async (transaction) => {
+              const engagement = await transaction.get(engagementRef);
+              const lastAccess = engagement.data()?.lastAccessedAt?.toDate?.();
+              if (lastAccess && Date.now() - lastAccess.getTime() < 120_000) return;
+              transaction.set(engagementRef, {
+                engagementId: engagementRef.id,
+                userId: activeUser.uid,
+                materialId: material.id,
+                teacherId: material.teacherId || "",
+                readCount: engagement.exists ? firebase.firestore.FieldValue.increment(1) : 1,
+                ...(engagement.exists ? {} : { progressPercent: 0, readingTimeSeconds: 0 }),
+                lastAccessedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              }, { merge: true });
+            });
+            await loadStudentProgress();
+          } catch (error) {
+            document.getElementById("app-account-status").textContent = `Could not save reading activity: ${error.message || "Please try again."}`;
+            console.error("Could not record material read", error);
+          }
+        }
+
+        async function loadTeacherDashboard() {
+          const list = document.getElementById("teacher-material-list");
+          list.replaceChildren();
+          try {
+            const [teacherSnapshot, materialsSnapshot] = await Promise.all([
+              db.collection("teachers").doc(activeUser.uid).get(),
+              db.collection("materials").where("teacherId", "==", activeUser.uid).orderBy("createdAt", "desc").get(),
+            ]);
+            const teacher = teacherSnapshot.exists ? teacherSnapshot.data() : {};
+            document.getElementById("teacher-material-total").textContent = String(materialsSnapshot.size);
+            document.getElementById("teacher-reader-total").textContent = String(teacher.totalReaders || 0);
+            document.getElementById("teacher-earnings-total").textContent = `TZS ${Number(teacher.earningsBalanceTzs || 0).toLocaleString()}`;
+            const status = teacher.verificationStatus || "PENDING";
+            const statusBadge = document.getElementById("teacher-verification-status");
+            statusBadge.textContent = status.replaceAll("_", " ");
+            statusBadge.className = `rounded-full px-3 py-1.5 text-xs font-extrabold ${status === "VERIFIED" || status === "APPROVED" ? "bg-emerald-50 text-forest" : "bg-amber-50 text-amber-700"}`;
+            if (!materialsSnapshot.size) {
+              const empty = document.createElement("li");
+              empty.className = "py-3 text-sm font-semibold text-slate-500";
+              empty.textContent = "You have not uploaded any materials yet.";
+              list.append(empty);
+            }
+            materialsSnapshot.docs.slice(0, 50).forEach((document) => {
+              const material = document.data();
+              const row = document.createElement("li");
+              row.className = "flex items-center gap-3 py-3";
+              const badge = document.createElement("span");
+              badge.className = "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-xs font-extrabold text-forest";
+              badge.textContent = "PDF";
+              const description = document.createElement("span");
+              description.className = "min-w-0 flex-1";
+              const title = document.createElement("span");
+              title.className = "block truncate text-sm font-extrabold text-ink";
+              title.textContent = material.title || "Untitled material";
+              const details = document.createElement("span");
+              details.className = "text-xs text-slate-500";
+              details.textContent = `${material.subject || "Subject"} · ${material.form || "Form —"} · ${material.totalReadCount || 0} reads`;
+              description.append(title, details);
+              const badgeStatus = document.createElement("span");
+              badgeStatus.className = "rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-extrabold text-amber-700";
+              badgeStatus.textContent = String(material.status || "PENDING_REVIEW").replaceAll("_", " ");
+              row.append(badge, description, badgeStatus);
+              list.append(row);
+            });
+          } catch (error) {
+            const row = document.createElement("li");
+            row.className = "py-3 text-sm font-semibold text-red-700";
+            row.textContent = `Could not load your dashboard: ${error.message || "Please try again."}`;
+            list.replaceChildren(row);
+            console.error("Could not load teacher dashboard", error);
+          }
+        }
+        window.maarifaRefreshTeacherDashboard = loadTeacherDashboard;
+
         document.getElementById("student-form-filter").addEventListener("change", applyStudentFilters);
         document.getElementById("student-subject-filter").addEventListener("change", applyStudentFilters);
 
-        document.querySelectorAll("[data-student-material]").forEach((material) => {
-          material.addEventListener("click", () => {
-            document.getElementById("reader-title").textContent = material.dataset.title;
-            document.getElementById("reader-kind").textContent = `${material.dataset.kind} · ${material.dataset.subject[0].toUpperCase()}${material.dataset.subject.slice(1)}`;
-            document.getElementById("reader-content").textContent = material.dataset.content;
-          });
+        let selectedMaterialForReader = null;
+        document.getElementById("student-material-list").addEventListener("click", (event) => {
+          const material = event.target.closest("[data-student-material]");
+          if (!material) return;
+          document.getElementById("reader-title").textContent = material.dataset.title;
+          document.getElementById("reader-kind").textContent = `${material.dataset.kind} · ${material.dataset.subject}`;
+          document.getElementById("reader-content").textContent = material.dataset.content;
+          const openLink = document.getElementById("reader-open-link");
+          selectedMaterialForReader = approvedMaterials.find((item) => item.id === material.dataset.materialId) || null;
+          openLink.href = material.dataset.fileUrl || "#";
+          openLink.classList.toggle("pointer-events-none", !material.dataset.fileUrl);
+          openLink.classList.toggle("bg-slate-300", !material.dataset.fileUrl);
+          openLink.classList.toggle("bg-forest", Boolean(material.dataset.fileUrl));
+          openLink.setAttribute("aria-disabled", String(!material.dataset.fileUrl));
         });
-        document.getElementById("complete-study-session").addEventListener("click", (event) => {
-          sessionsCompleted = Math.min(sessionsCompleted + 1, 5);
-          document.getElementById("study-progress-label").textContent = `${sessionsCompleted} of 5 sessions`;
-          document.getElementById("study-progress-bar").style.width = `${sessionsCompleted * 20}%`;
-          event.currentTarget.textContent = sessionsCompleted === 5 ? "Weekly goal complete ✓" : "Session complete ✓";
-          event.currentTarget.classList.add("bg-leaf");
+        document.getElementById("reader-open-link").addEventListener("click", () => {
+          if (selectedMaterialForReader) recordMaterialRead(selectedMaterialForReader);
         });
 
-        window.addEventListener("maarifa:material-published", (event) => {
-          const { title, subject, form } = event.detail;
-          const row = document.createElement("li");
-          row.className = "flex items-center gap-3 py-3";
-          const badge = document.createElement("span");
-          badge.className = "grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-xs font-extrabold text-forest";
-          badge.textContent = "PDF";
-          const description = document.createElement("span");
-          description.className = "min-w-0 flex-1";
-          const titleNode = document.createElement("span");
-          titleNode.className = "block truncate text-sm font-extrabold text-ink";
-          titleNode.textContent = title;
-          const details = document.createElement("span");
-          details.className = "text-xs text-slate-500";
-          details.textContent = `${subject} · ${form} · Just now`;
-          description.append(titleNode, details);
-          const status = document.createElement("span");
-          status.className = "rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-extrabold text-amber-700";
-          status.textContent = "In review";
-          row.append(badge, description, status);
-          document.getElementById("teacher-material-list").prepend(row);
-          teacherMaterialTotal += 1;
-          document.getElementById("teacher-material-total").textContent = String(teacherMaterialTotal);
-        });
         });
       })();
     </script>
@@ -340,10 +816,10 @@
 
         <div class="flex items-center gap-2 sm:gap-3">
           <a
-            href="#app-experience"
-            data-preview-app
+            href="#registration-modal"
+            data-open-login
             class="hidden rounded-full px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:inline-flex"
-          >App preview</a>
+          >Sign in</a>
           <a
             href="#register"
             data-open-registration
@@ -662,12 +1138,16 @@
           <div class="mx-auto max-w-2xl text-center">
             <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-leaf">Inside Maarifa</p>
             <h2 id="experience-title" class="mt-4 text-3xl font-extrabold tracking-[-0.04em] text-ink sm:text-4xl">A learning space made for real life.</h2>
-            <p class="mt-4 leading-7 text-slate-600">Explore the student library or step into the educator dashboard. This interactive preview runs right here in your browser.</p>
+            <p class="mt-4 leading-7 text-slate-600">Sign in to browse the live student library or manage your educator materials.</p>
           </div>
 
           <div class="mt-8 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Choose an app experience">
             <button type="button" id="student-view-tab" data-experience-tab="student" role="tab" aria-controls="student-experience" aria-selected="true" class="rounded-full bg-forest px-5 py-3 text-sm font-extrabold text-white transition hover:bg-leaf">Student experience</button>
             <button type="button" id="teacher-view-tab" data-experience-tab="teacher" role="tab" aria-controls="teacher-dashboard-panel" aria-selected="false" class="rounded-full bg-slate-100 px-5 py-3 text-sm font-extrabold text-slate-600 transition hover:bg-emerald-50 hover:text-forest">Teacher dashboard</button>
+          </div>
+          <div class="mx-auto mt-4 flex max-w-6xl items-center justify-between gap-3 rounded-2xl bg-[#F2FBF5] px-4 py-3 text-sm">
+            <p id="app-account-status" class="font-semibold text-slate-600">Sign in to load your live Maarifa account.</p>
+            <div class="flex shrink-0 items-center gap-3"><button type="button" data-open-login class="font-extrabold text-forest hover:text-leaf">Sign in</button><button type="button" data-sign-out class="hidden font-extrabold text-forest hover:text-leaf">Sign out</button></div>
           </div>
 
           <div class="mx-auto mt-8 max-w-6xl">
@@ -678,7 +1158,7 @@
                     <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Your learning space</p>
                     <h3 class="mt-1 text-xl font-extrabold text-ink">Habari, <span id="student-greeting">Learner</span> 👋</h3>
                   </div>
-                  <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-2 text-[10px] font-extrabold text-forest shadow-sm"><span class="h-2 w-2 rounded-full bg-leaf"></span>Ready offline</span>
+                  <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-2 text-[10px] font-extrabold text-forest shadow-sm"><span class="h-2 w-2 rounded-full bg-leaf"></span>Verified resources</span>
                 </div>
                 <div class="mt-6 grid grid-cols-2 gap-3">
                   <label class="text-xs font-bold text-slate-600">Form
@@ -696,35 +1176,26 @@
                 </div>
                 <div class="mt-6 flex items-center justify-between">
                   <h4 class="font-extrabold text-ink">Study materials</h4>
-                  <span id="material-count" class="text-xs font-bold text-slate-500">3 resources</span>
+                  <span id="material-count" class="text-xs font-bold text-slate-500">0 resources</span>
                 </div>
                 <div id="student-material-list" class="mt-3 space-y-2">
-                  <button type="button" data-student-material data-title="Cell structure & organisation" data-subject="biology" data-form="2" data-kind="Verified notes" data-content="Explore how cells form the building blocks of life. Review the key differences between plant and animal cells, then test yourself by labelling each structure." class="student-material flex w-full items-center gap-3 rounded-2xl border border-emerald-100 bg-white p-3 text-left transition hover:border-emerald-300 hover:shadow-sm">
-                    <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-mint text-lg">🧬</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-extrabold text-ink">Cell structure &amp; organisation</span><span class="mt-1 block text-xs font-semibold text-slate-500">Biology · Form 2 · Verified notes</span></span><span aria-hidden="true" class="text-lg text-forest">→</span>
-                  </button>
-                  <button type="button" data-student-material data-title="Forces and Newton’s laws" data-subject="physics" data-form="3" data-kind="Study guide" data-content="A force changes an object's motion. Start with Newton’s first law: an object remains at rest or in uniform motion unless acted upon by a resultant force. Use F = ma to connect force, mass and acceleration." class="student-material flex w-full items-center gap-3 rounded-2xl border border-emerald-100 bg-white p-3 text-left transition hover:border-emerald-300 hover:shadow-sm">
-                    <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-50 text-lg">⚡</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-extrabold text-ink">Forces and Newton’s laws</span><span class="mt-1 block text-xs font-semibold text-slate-500">Physics · Form 3 · Study guide</span></span><span aria-hidden="true" class="text-lg text-forest">→</span>
-                  </button>
-                  <button type="button" data-student-material data-title="NECTA Mathematics · 2024" data-subject="mathematics" data-form="4" data-kind="Past paper" data-content="Past paper practice · Mathematics, Form 4. Try each question before checking your method. Focus on showing clear working for algebra, geometry and statistics questions." class="student-material flex w-full items-center gap-3 rounded-2xl border border-emerald-100 bg-white p-3 text-left transition hover:border-emerald-300 hover:shadow-sm">
-                    <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-50 text-lg">📝</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-extrabold text-ink">NECTA Mathematics · 2024</span><span class="mt-1 block text-xs font-semibold text-slate-500">Mathematics · Form 4 · Past paper</span></span><span aria-hidden="true" class="text-lg text-forest">→</span>
-                  </button>
-                  <p id="student-empty-state" class="hidden rounded-2xl bg-white p-4 text-sm font-semibold text-slate-500">No materials match those filters. Try another Form or subject.</p>
+                  <p id="student-empty-state" class="rounded-2xl bg-white p-4 text-sm font-semibold text-slate-500">Sign in to browse verified learning materials.</p>
                 </div>
                 <div class="mt-5 rounded-2xl bg-white p-4">
-                  <div class="flex items-center justify-between text-xs font-bold"><span class="text-slate-600">Weekly study progress</span><span id="study-progress-label" class="text-forest">3 of 5 sessions</span></div>
-                  <div class="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100"><div id="study-progress-bar" class="h-full w-3/5 rounded-full bg-leaf transition-all"></div></div>
-                  <p class="mt-2 text-xs text-slate-500">Your reading progress stays ready for your next session.</p>
+                  <div class="flex items-center justify-between text-xs font-bold"><span class="text-slate-600">Learning progress</span><span id="study-progress-label" class="text-forest">0 materials read</span></div>
+                  <div class="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100"><div id="study-progress-bar" class="h-full w-0 rounded-full bg-leaf transition-all"></div></div>
+                  <p class="mt-2 text-xs text-slate-500">Your reading progress is saved to your account.</p>
                 </div>
               </div>
               <article class="min-h-[420px] rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-9">
                 <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-5">
-                  <div><p id="reader-kind" class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Verified notes · Biology</p><h3 id="reader-title" class="mt-2 text-2xl font-extrabold tracking-tight text-ink">Cell structure &amp; organisation</h3></div>
-                  <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-mint text-forest" aria-label="Saved for offline reading">✓</span>
+                  <div><p id="reader-kind" class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Select a material</p><h3 id="reader-title" class="mt-2 text-2xl font-extrabold tracking-tight text-ink">Your reader is ready</h3></div>
+                  <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-mint text-forest" aria-label="Verified material">✓</span>
                 </div>
                 <div class="py-6">
                   <div class="mb-6 rounded-2xl bg-[#F2FBF5] p-5">
                     <p class="text-xs font-extrabold uppercase tracking-[0.14em] text-leaf">Today’s focus</p>
-                    <p id="reader-content" class="mt-2 leading-7 text-slate-700">Explore how cells form the building blocks of life. Review the key differences between plant and animal cells, then test yourself by labelling each structure.</p>
+                    <p id="reader-content" class="mt-2 leading-7 text-slate-700">Sign in to open verified notes, past papers and study guides from the Maarifa library.</p>
                   </div>
                   <h4 class="font-extrabold text-ink">A quick study plan</h4>
                   <ol class="mt-4 space-y-3 text-sm leading-6 text-slate-600">
@@ -732,7 +1203,7 @@
                     <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-mint text-xs font-extrabold text-forest">2</span>Explain the topic in your own words.</li>
                     <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-mint text-xs font-extrabold text-forest">3</span>Try a practice question to check your understanding.</li>
                   </ol>
-                  <button id="complete-study-session" type="button" class="mt-7 w-full rounded-full bg-forest px-5 py-4 text-sm font-extrabold text-white transition hover:bg-leaf">Mark session complete</button>
+                  <a id="reader-open-link" href="#" target="_blank" rel="noopener noreferrer" class="pointer-events-none mt-7 block w-full rounded-full bg-slate-300 px-5 py-4 text-center text-sm font-extrabold text-white" aria-disabled="true">Open study material</a>
                 </div>
               </article>
             </section>
@@ -744,18 +1215,15 @@
                   <button type="button" data-open-upload class="inline-flex items-center justify-center gap-2 rounded-full bg-forest px-5 py-3.5 text-sm font-extrabold text-white transition hover:bg-leaf"><span aria-hidden="true">＋</span> Upload document</button>
                 </div>
                 <div class="mt-6 grid gap-3 sm:grid-cols-3">
-                  <div class="rounded-2xl border border-slate-100 bg-white p-5"><p class="text-xs font-bold text-slate-500">Materials published</p><p id="teacher-material-total" class="mt-2 text-2xl font-extrabold text-ink">4</p><p class="mt-1 text-xs font-semibold text-forest">Ready for students</p></div>
-                  <div class="rounded-2xl border border-slate-100 bg-white p-5"><p class="text-xs font-bold text-slate-500">Student reads</p><p class="mt-2 text-2xl font-extrabold text-ink">248</p><p class="mt-1 text-xs font-semibold text-forest">↑ 18% this month</p></div>
-                  <div class="rounded-2xl border border-slate-100 bg-white p-5"><p class="text-xs font-bold text-slate-500">Earnings preview</p><p class="mt-2 text-2xl font-extrabold text-ink">TZS 84,500</p><p class="mt-1 text-xs font-semibold text-slate-500">Based on verified engagement</p></div>
+                  <div class="rounded-2xl border border-slate-100 bg-white p-5"><p class="text-xs font-bold text-slate-500">Your materials</p><p id="teacher-material-total" class="mt-2 text-2xl font-extrabold text-ink">—</p><p class="mt-1 text-xs font-semibold text-forest">From your account</p></div>
+                  <div class="rounded-2xl border border-slate-100 bg-white p-5"><p class="text-xs font-bold text-slate-500">Student reads</p><p id="teacher-reader-total" class="mt-2 text-2xl font-extrabold text-ink">—</p><p class="mt-1 text-xs font-semibold text-forest">Verified engagement</p></div>
+                  <div class="rounded-2xl border border-slate-100 bg-white p-5"><p class="text-xs font-bold text-slate-500">Earnings balance</p><p id="teacher-earnings-total" class="mt-2 text-2xl font-extrabold text-ink">TZS —</p><p class="mt-1 text-xs font-semibold text-slate-500">Recorded payouts only</p></div>
                 </div>
                 <div class="mt-6 rounded-2xl border border-slate-100 bg-white p-5">
-                  <div class="flex items-center justify-between"><div><h4 class="font-extrabold text-ink">Your materials</h4><p class="mt-1 text-xs text-slate-500">Recent uploads and their review status</p></div><span class="rounded-full bg-mint px-3 py-1.5 text-xs font-extrabold text-forest">Demo dashboard</span></div>
-                  <ul id="teacher-material-list" class="mt-4 divide-y divide-slate-100">
-                    <li class="flex items-center gap-3 py-3"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-forest">PDF</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-extrabold text-ink">Introduction to Ecology</span><span class="text-xs text-slate-500">Biology · Form 4 · 96 reads</span></span><span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-forest">Published</span></li>
-                    <li class="flex items-center gap-3 py-3"><span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-forest">PDF</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-extrabold text-ink">Algebra revision pack</span><span class="text-xs text-slate-500">Mathematics · Form 2 · 72 reads</span></span><span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-forest">Published</span></li>
-                  </ul>
+                  <div class="flex items-center justify-between"><div><h4 class="font-extrabold text-ink">Your materials</h4><p class="mt-1 text-xs text-slate-500">Recent uploads and their review status</p></div><span id="teacher-verification-status" class="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-extrabold text-amber-700">Sign in required</span></div>
+                  <ul id="teacher-material-list" class="mt-4 divide-y divide-slate-100"><li class="py-3 text-sm font-semibold text-slate-500">Sign in to view educator materials.</li></ul>
                 </div>
-                <p class="mt-4 text-xs leading-5 text-slate-500">This is a frontend preview only. Uploads and earnings are simulated and aren’t sent to a server.</p>
+                <p class="mt-4 text-xs leading-5 text-slate-500">Uploads are stored in Maarifa Firebase Storage and submitted for educator review.</p>
               </div>
             </section>
           </div>
@@ -880,7 +1348,7 @@
           <div id="registration-choice">
             <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Start your journey</p>
             <h2 id="registration-title" class="mt-2 text-2xl font-extrabold tracking-tight text-ink">How will you use Maarifa?</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-500">Choose your learning space to create a demo account.</p>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Choose an account type to register with Firebase.</p>
             <div class="mt-6 grid gap-3 sm:grid-cols-2">
               <button type="button" data-select-role="student" class="rounded-2xl border border-emerald-100 bg-[#F2FBF5] p-5 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md">
                 <span class="grid h-11 w-11 place-items-center rounded-2xl bg-white text-xl">📚</span><span class="mt-4 block font-extrabold text-ink">I’m a student</span><span class="mt-1 block text-xs leading-5 text-slate-500">Find notes, past papers and study guides.</span>
@@ -889,6 +1357,9 @@
                 <span class="grid h-11 w-11 place-items-center rounded-2xl bg-white text-xl">✏️</span><span class="mt-4 block font-extrabold text-ink">I’m an educator</span><span class="mt-1 block text-xs leading-5 text-slate-500">Share learning materials and track engagement.</span>
               </button>
             </div>
+            <p class="mt-5 text-center text-sm text-slate-500">Already registered?
+              <button type="button" data-show-login class="font-extrabold text-forest hover:text-leaf">Sign in</button>
+            </p>
           </div>
 
           <form id="student-registration-form" class="hidden space-y-4" novalidate>
@@ -899,10 +1370,9 @@
               <label for="student-name" class="mb-1.5 block text-sm font-bold text-slate-700">Full name</label>
               <input id="student-name" name="name" type="text" autocomplete="name" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="Your full name" />
             </div>
-            <div>
-              <label for="student-contact" class="mb-1.5 block text-sm font-bold text-slate-700">Email or phone</label>
-              <input id="student-contact" name="contact" type="text" autocomplete="email" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="you@example.com or +255..." />
-            </div>
+            <div><label for="student-auth-method" class="mb-1.5 block text-sm font-bold text-slate-700">Sign-up method</label><select id="student-auth-method" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-50"><option value="email">Email and password</option><option value="phone">Phone number and SMS code</option></select></div>
+            <div id="student-email-group"><label for="student-email" class="mb-1.5 block text-sm font-bold text-slate-700">Email</label><input id="student-email" name="email" type="email" autocomplete="email" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="you@example.com" /></div>
+            <div id="student-phone-group" class="hidden"><label for="student-phone" class="mb-1.5 block text-sm font-bold text-slate-700">Phone number</label><input id="student-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+255..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" /></div>
             <div>
               <label for="student-school" class="mb-1.5 block text-sm font-bold text-slate-700">School</label>
               <input id="student-school" name="school" type="text" autocomplete="organization" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="Your school name" />
@@ -913,10 +1383,11 @@
                 <option value="">Choose your Form</option><option value="1">Form 1</option><option value="2">Form 2</option><option value="3">Form 3</option><option value="4">Form 4</option><option value="5">Form 5</option><option value="6">Form 6</option>
               </select>
             </div>
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div id="student-password-fields" class="grid gap-4 sm:grid-cols-2">
               <div><label for="student-password" class="mb-1.5 block text-sm font-bold text-slate-700">Password</label><input id="student-password" name="password" type="password" autocomplete="new-password" minlength="8" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="At least 8 characters" /></div>
               <div><label for="student-confirm-password" class="mb-1.5 block text-sm font-bold text-slate-700">Confirm password</label><input id="student-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="Repeat password" /></div>
             </div>
+            <div id="student-otp-fields" class="hidden space-y-3"><div id="student-recaptcha"></div><label for="student-otp" class="block text-sm font-bold text-slate-700">SMS verification code</label><input id="student-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-50" placeholder="6-digit code" /></div>
             <p id="student-registration-error" role="alert" class="hidden rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"></p>
             <button type="submit" class="w-full rounded-full bg-forest px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-forest/15 transition hover:bg-leaf">Create student account <span aria-hidden="true">→</span></button>
           </form>
@@ -929,10 +1400,9 @@
               <label for="teacher-name" class="mb-1.5 block text-sm font-bold text-slate-700">Full name</label>
               <input id="teacher-name" name="name" type="text" autocomplete="name" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="Your full name" />
             </div>
-            <div>
-              <label for="teacher-contact" class="mb-1.5 block text-sm font-bold text-slate-700">Email or phone</label>
-              <input id="teacher-contact" name="contact" type="text" autocomplete="email" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="you@example.com or +255..." />
-            </div>
+            <div><label for="teacher-auth-method" class="mb-1.5 block text-sm font-bold text-slate-700">Sign-up method</label><select id="teacher-auth-method" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-50"><option value="email">Email and password</option><option value="phone">Phone number and SMS code</option></select></div>
+            <div id="teacher-email-group"><label for="teacher-email" class="mb-1.5 block text-sm font-bold text-slate-700">Email</label><input id="teacher-email" name="email" type="email" autocomplete="email" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="you@example.com" /></div>
+            <div id="teacher-phone-group" class="hidden"><label for="teacher-phone" class="mb-1.5 block text-sm font-bold text-slate-700">Phone number</label><input id="teacher-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+255..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" /></div>
             <div>
               <label for="teacher-subjects" class="mb-1.5 block text-sm font-bold text-slate-700">Subjects taught</label>
               <input id="teacher-subjects" name="subjects" type="text" autocomplete="off" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="e.g. Biology, Chemistry" />
@@ -941,14 +1411,28 @@
               <label for="teacher-experience" class="mb-1.5 block text-sm font-bold text-slate-700">Years of experience</label>
               <input id="teacher-experience" name="experience" type="number" min="0" max="60" step="1" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="e.g. 5" />
             </div>
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div id="teacher-password-fields" class="grid gap-4 sm:grid-cols-2">
               <div><label for="teacher-password" class="mb-1.5 block text-sm font-bold text-slate-700">Password</label><input id="teacher-password" name="password" type="password" autocomplete="new-password" minlength="8" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="At least 8 characters" /></div>
               <div><label for="teacher-confirm-password" class="mb-1.5 block text-sm font-bold text-slate-700">Confirm password</label><input id="teacher-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50" placeholder="Repeat password" /></div>
             </div>
+            <div id="teacher-otp-fields" class="hidden space-y-3"><div id="teacher-recaptcha"></div><label for="teacher-otp" class="block text-sm font-bold text-slate-700">SMS verification code</label><input id="teacher-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-50" placeholder="6-digit code" /></div>
             <p id="teacher-registration-error" role="alert" class="hidden rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"></p>
             <button type="submit" class="w-full rounded-full bg-forest px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-forest/15 transition hover:bg-leaf">Create educator account <span aria-hidden="true">→</span></button>
           </form>
-          <p class="mt-5 text-center text-xs leading-5 text-slate-400">Demo registration only. Your information stays in this browser and is not sent to a server.</p>
+          <form id="login-form" class="hidden space-y-4" novalidate>
+            <button type="button" data-login-back class="mb-1 text-sm font-bold text-forest transition hover:text-leaf">← Back to registration</button>
+            <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-leaf">Welcome back</p>
+            <h2 id="login-heading" class="text-2xl font-extrabold tracking-tight text-ink">Sign in to Maarifa</h2>
+            <div><label for="login-method" class="mb-1.5 block text-sm font-bold text-slate-700">Sign-in method</label><select id="login-method" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-50"><option value="email">Email and password</option><option value="phone">Phone number and SMS code</option></select></div>
+            <div id="login-email-group"><label for="login-email" class="mb-1.5 block text-sm font-bold text-slate-700">Email</label><input id="login-email" type="email" autocomplete="email" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-50" placeholder="you@example.com" /></div>
+            <div id="login-phone-group" class="hidden"><label for="login-phone" class="mb-1.5 block text-sm font-bold text-slate-700">Phone number</label><input id="login-phone" type="tel" autocomplete="tel" inputmode="tel" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-50" placeholder="+255..." /></div>
+            <div id="login-password-group"><label for="login-password" class="mb-1.5 block text-sm font-bold text-slate-700">Password</label><input id="login-password" type="password" autocomplete="current-password" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-50" placeholder="Your password" /></div>
+            <div id="login-otp-fields" class="hidden space-y-3"><div id="login-recaptcha"></div><label for="login-otp" class="block text-sm font-bold text-slate-700">SMS verification code</label><input id="login-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-50" placeholder="6-digit code" /></div>
+            <p id="login-error" role="alert" class="hidden rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"></p>
+            <button type="submit" class="w-full rounded-full bg-forest px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-forest/15 transition hover:bg-leaf">Sign in <span aria-hidden="true">→</span></button>
+            <button type="button" data-reset-password class="w-full text-sm font-bold text-forest hover:text-leaf">Forgot password?</button>
+          </form>
+          <p class="mt-5 text-center text-xs leading-5 text-slate-400">Account details are securely processed by Firebase Authentication and saved to Maarifa’s Firebase database. Phone accounts verify by SMS; phone authentication does not use a password.</p>
         </div>
       </section>
     </div>
@@ -1318,8 +1802,32 @@
         let previousFocus = null;
         let closeTimer;
 
-        function openUpload(event) {
+        async function openUpload(event) {
           event.preventDefault();
+          const user = firebase.auth().currentUser;
+          if (!user || !window.maarifaProfile) {
+            window.maarifaOpenLogin(event);
+            return;
+          }
+          if (window.maarifaProfile.role !== "TEACHER") {
+            error.textContent = "Only educator accounts can upload materials.";
+            error.classList.remove("hidden");
+            return;
+          }
+          try {
+            const teacherSnapshot = await db.collection("teachers").doc(user.uid).get();
+            const verificationStatus = teacherSnapshot.exists
+              ? String(teacherSnapshot.data().verificationStatus || "").toUpperCase()
+              : "";
+            if (!["VERIFIED", "APPROVED"].includes(verificationStatus)) {
+              document.getElementById("app-account-status").textContent = "Material uploads are available after your educator account is verified.";
+              return;
+            }
+          } catch (verificationError) {
+            document.getElementById("app-account-status").textContent = `Could not check educator verification: ${verificationError.message || "Please try again."}`;
+            console.error("Could not check educator verification before upload", verificationError);
+            return;
+          }
           window.clearTimeout(closeTimer);
           previousFocus = event.currentTarget;
           active = true;
@@ -1379,11 +1887,19 @@
             choosePdf.setAttribute("aria-label", "Choose PDF file");
             return;
           }
-          if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+          if ((file.type && file.type !== "application/pdf") || !file.name.toLowerCase().endsWith(".pdf")) {
             fileInput.value = "";
             pdfBadge.textContent = "PDF";
             fileName.textContent = "";
             error.textContent = "Please choose a PDF file.";
+            error.classList.remove("hidden");
+            return;
+          }
+          if (file.size >= 20 * 1024 * 1024) {
+            fileInput.value = "";
+            pdfBadge.textContent = "PDF";
+            fileName.textContent = "";
+            error.textContent = "PDF files must be smaller than 20 MB.";
             error.classList.remove("hidden");
             return;
           }
@@ -1393,7 +1909,7 @@
           choosePdf.setAttribute("aria-label", `Selected PDF: ${file.name}. Choose another PDF file.`);
         });
 
-        form.addEventListener("submit", (event) => {
+        form.addEventListener("submit", async (event) => {
           event.preventDefault();
           error.classList.add("hidden");
           error.textContent = "";
@@ -1404,15 +1920,73 @@
             return;
           }
           if (!form.reportValidity()) return;
-          const material = {
-            title: document.getElementById("material-title").value.trim(),
-            subject: document.getElementById("material-subject").value.trim(),
-            form: document.getElementById("material-form").value,
-          };
-          window.dispatchEvent(new CustomEvent("maarifa:material-published", { detail: material }));
-          notice.textContent = `"${material.title}" was added to your demo dashboard and queued for review. This frontend preview does not send or store files on a server.`;
-          notice.classList.remove("hidden");
-          notice.focus();
+          const user = firebase.auth().currentUser;
+          const profile = window.maarifaProfile;
+          const file = fileInput.files[0];
+          if (!user || !profile || profile.role !== "TEACHER") {
+            error.textContent = "Sign in with an educator account before uploading.";
+            error.classList.remove("hidden");
+            return;
+          }
+          if (file.size >= 20 * 1024 * 1024 || (file.type && file.type !== "application/pdf") || !file.name.toLowerCase().endsWith(".pdf")) {
+            error.textContent = "Choose a PDF file smaller than 20 MB.";
+            error.classList.remove("hidden");
+            return;
+          }
+          const submitButton = form.querySelector('button[type="submit"]');
+          submitButton.disabled = true;
+          submitButton.textContent = "Uploading…";
+          notice.classList.add("hidden");
+          let storageRef = null;
+          try {
+            const materialRef = firebase.firestore().collection("materials").doc();
+            storageRef = firebase.storage().ref(`materials/${user.uid}/${materialRef.id}.pdf`);
+            await storageRef.put(file, { contentType: "application/pdf" });
+            const fileUrl = await storageRef.getDownloadURL();
+            const selectedForm = document.getElementById("material-form");
+            const material = {
+              materialId: materialRef.id,
+              teacherId: user.uid,
+              teacherName: profile.fullName || user.displayName || "",
+              title: document.getElementById("material-title").value.trim(),
+              description: document.getElementById("material-description").value.trim(),
+              subject: document.getElementById("material-subject").value.trim(),
+              topic: document.getElementById("material-topic").value.trim(),
+              form: `FORM_${selectedForm.selectedIndex + 1}`,
+              fileUrl,
+              fileType: "PDF",
+              fileSizeBytes: file.size,
+              pageCount: 0,
+              status: "PENDING_REVIEW",
+              rejectionReason: "",
+              uniqueReaderCount: 0,
+              totalReadCount: 0,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              approvedAt: null,
+            };
+            await materialRef.set(material);
+            notice.textContent = `"${material.title}" was uploaded and submitted for review. It will appear in the student library after approval.`;
+            notice.classList.remove("hidden");
+            notice.focus();
+            form.reset();
+            pdfBadge.textContent = "PDF";
+            fileName.textContent = "";
+            choosePdf.setAttribute("aria-label", "Choose PDF file");
+            window.maarifaRefreshTeacherDashboard?.();
+          } catch (uploadError) {
+            if (storageRef) {
+              try {
+                await storageRef.delete();
+              } catch (cleanupError) {
+                console.error("Could not clean up the uploaded file after submission failed", cleanupError);
+              }
+            }
+            error.textContent = uploadError?.message || "Upload failed. Please check your connection and try again.";
+            error.classList.remove("hidden");
+          } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = "Publish material";
+          }
         });
       })();
     </script>
