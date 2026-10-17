@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS === "true" ? "/MaarifaApp/" : "/",
+  base: "/MaarifaApp/", // 👈 Weka moja kwa moja hapa bila masharti ya GITHUB_ACTIONS
   plugins: [react()],
   resolve: {
     alias: {
@@ -12,6 +12,6 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    sourcemap: false, // Inapunguza ukubwa wa dist folder wakati wa deploy
+    sourcemap: false,
   },
 });
